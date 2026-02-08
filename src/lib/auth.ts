@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import EmailProvider from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
+import { sendEmail } from "./email";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -128,6 +129,23 @@ export const authOptions: NextAuthOptions = {
           where: { id: user.id },
           data: { currentClubId: invites[0].clubId },
         });
+      }
+
+      // Notify super admins of new user
+      const superAdmins = await prisma.user.findMany({
+        where: { systemRole: "SUPER_ADMIN" },
+        select: { email: true },
+      });
+      for (const admin of superAdmins) {
+        sendEmail(
+          admin.email,
+          "New User Signup",
+          `<p>A new user has signed up: <strong>${user.email}</strong></p>` +
+          `<p>Name: ${user.name || "Not set"}</p>` +
+          (invites.length > 0
+            ? `<p>Auto-joined ${invites.length} club(s) from pending invites.</p>`
+            : `<p>No pending invites — they will go through onboarding.</p>`)
+        ).catch(() => {});
       }
     },
   },
