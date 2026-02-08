@@ -230,6 +230,12 @@ export default function BourbonsPage() {
         </Card>
       )}
 
+      {/* Debug: remove after testing */}
+      {session && (
+        <p className="text-xs text-muted-foreground">
+          Role: clubRole={session.user?.clubRole || "none"}, systemRole={session.user?.systemRole || "none"}, isAdmin={String(isAdmin)}
+        </p>
+      )}
       <Input
         placeholder="Search by name or distillery..."
         value={search}
