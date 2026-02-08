@@ -8,15 +8,15 @@ export const authOptions: NextAuthOptions = {
   providers: [
     EmailProvider({
       server: {
-        host: "smtp.resend.com",
+        host: "smtp.gmail.com",
         port: 465,
         secure: true,
         auth: {
-          user: "resend",
-          pass: process.env.RESEND_API_KEY,
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD,
         },
       },
-      from: process.env.EMAIL_FROM,
+      from: process.env.GMAIL_USER,
     }),
   ],
   session: {
