@@ -23,6 +23,18 @@ export default function AdminMembersPage() {
     fetch("/api/members").then((r) => r.json()).then(setMembers);
   }, []);
 
+  const removeMember = async (id: string) => {
+    if (!confirm("Remove this member? This will delete all their data.")) return;
+    const res = await fetch(`/api/members/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+      toast.success("Member removed");
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to remove member");
+    }
+  };
+
   const toggleRole = async (id: string, currentRole: string) => {
     const newRole = currentRole === "ADMIN" ? "MEMBER" : "ADMIN";
     const res = await fetch(`/api/members/${id}`, {
@@ -69,9 +81,12 @@ export default function AdminMembersPage() {
                       {member.role}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="space-x-2">
                     <Button variant="outline" size="sm" onClick={() => toggleRole(member.id, member.role)}>
                       {member.role === "ADMIN" ? "Make Member" : "Make Admin"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => removeMember(member.id)}>
+                      Remove
                     </Button>
                   </TableCell>
                 </TableRow>

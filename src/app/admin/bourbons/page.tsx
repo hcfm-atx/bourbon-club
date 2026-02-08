@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ interface Bourbon {
   distillery: string | null;
   type: string;
   proof: number | null;
+  imageUrl: string | null;
   avgRating: number | null;
   reviewCount: number;
 }
@@ -44,6 +46,16 @@ export default function AdminBourbonsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {bourbons.map((bourbon) => (
           <Card key={bourbon.id}>
+            {bourbon.imageUrl && (
+              <div className="relative h-48 w-full">
+                <Image
+                  src={bourbon.imageUrl}
+                  alt={bourbon.name}
+                  fill
+                  className="object-cover rounded-t-lg"
+                />
+              </div>
+            )}
             <CardHeader>
               <CardTitle className="text-lg">{bourbon.name}</CardTitle>
             </CardHeader>
