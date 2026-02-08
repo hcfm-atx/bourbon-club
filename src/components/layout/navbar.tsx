@@ -51,7 +51,10 @@ export function Navbar() {
   if (!session) return null;
 
   const currentClub = clubs.find((c) => c.id === session.user.currentClubId) || clubs[0] || null;
-  const links = pathname.startsWith("/admin") ? adminLinks : memberLinks;
+  const superAdminLinks = isSuperAdmin
+    ? [{ href: "/admin/users", label: "Users" }, { href: "/admin/clubs", label: "Clubs" }]
+    : [];
+  const links = pathname.startsWith("/admin") ? [...adminLinks, ...superAdminLinks] : memberLinks;
 
   const switchClub = async (clubId: string) => {
     setSwitching(true);
@@ -121,11 +124,6 @@ export function Navbar() {
           </div>
         </div>
         <div className="hidden md:flex items-center gap-2">
-          {isSuperAdmin && (
-            <Link href="/admin/clubs">
-              <Button variant="outline" size="sm">Clubs</Button>
-            </Link>
-          )}
           {isAdmin && (
             <Link href={pathname.startsWith("/admin") ? "/dashboard" : "/admin/members"}>
               <Button variant="outline" size="sm">
@@ -186,15 +184,6 @@ export function Navbar() {
                 </Link>
               ))}
               <hr className="my-2" />
-              {isSuperAdmin && (
-                <Link
-                  href="/admin/clubs"
-                  onClick={() => setOpen(false)}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Manage Clubs
-                </Link>
-              )}
               {isAdmin && (
                 <Link
                   href={pathname.startsWith("/admin") ? "/dashboard" : "/admin/members"}
