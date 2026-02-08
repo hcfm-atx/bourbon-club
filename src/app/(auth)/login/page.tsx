@@ -5,7 +5,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
@@ -28,44 +27,50 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="inline-block mx-auto mb-2">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-block mb-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.svg" alt="Bourbon Club" width={64} height={64} />
+            <img src="/logo.svg" alt="Bourbon Club" width={80} height={80} className="mx-auto" />
           </Link>
-          <CardTitle className="text-2xl font-bold">Bourbon Club</CardTitle>
-          <CardDescription>Sign in with your email to continue</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {submitted ? (
-            <p className="text-center text-muted-foreground">
+          <h1 className="text-3xl font-light tracking-tight">Bourbon Club</h1>
+          <p className="text-sm text-muted-foreground mt-2">Sign in with your email to continue</p>
+        </div>
+        {submitted ? (
+          <div className="text-center border border-border rounded-lg p-8">
+            <p className="text-muted-foreground leading-relaxed">
               Check your email for a sign-in link.
             </p>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Sending..." : "Send Magic Link"}
-              </Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-xs tracking-widest uppercase text-muted-foreground">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-12"
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+            <Button type="submit" className="w-full h-12 tracking-widest uppercase text-xs" disabled={loading}>
+              {loading ? "Sending..." : "Send Magic Link"}
+            </Button>
+          </form>
+        )}
+        <p className="text-center mt-8">
+          <Link href="/" className="text-xs tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors">
+            &larr; Back
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
