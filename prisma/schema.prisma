@@ -184,9 +184,16 @@ model Review {
   userId           String
   bourbonId        String
   meetingBourbonId String?
-  rating           Int
+  rating           Float
+  appearanceScore  Int?
+  appearanceNotes  String?
+  noseScore        Int?
   nose             String?
+  tasteScore       Int?
   palate           String?
+  mouthfeelScore   Int?
+  mouthfeel        String?
+  finishScore      Int?
   finish           String?
   notes            String?
   createdAt        DateTime @default(now())

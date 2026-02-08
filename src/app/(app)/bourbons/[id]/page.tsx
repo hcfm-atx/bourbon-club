@@ -15,8 +15,15 @@ import { toast } from "sonner";
 interface Review {
   id: string;
   rating: number;
+  appearanceScore: number | null;
+  appearanceNotes: string | null;
+  noseScore: number | null;
   nose: string | null;
+  tasteScore: number | null;
   palate: string | null;
+  mouthfeelScore: number | null;
+  mouthfeel: string | null;
+  finishScore: number | null;
   finish: string | null;
   notes: string | null;
   createdAt: string;
@@ -40,17 +47,22 @@ interface Bourbon {
   meetings: { meeting: { id: string; title: string; date: string } }[];
 }
 
+const CATEGORIES = [
+  { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs" },
+  { key: "nose", scoreKey: "noseScore", notesKey: "nose", label: "Nose", desc: "Vanilla, caramel, fruit, wood, spice" },
+  { key: "taste", scoreKey: "tasteScore", notesKey: "palate", label: "Taste", desc: "Sweetness, oak, spice, complexity" },
+  { key: "mouthfeel", scoreKey: "mouthfeelScore", notesKey: "mouthfeel", label: "Mouthfeel", desc: "Thin, creamy, oily, hot" },
+  { key: "finish", scoreKey: "finishScore", notesKey: "finish", label: "Finish", desc: "Length, dryness, smoothness" },
+] as const;
+
 export default function BourbonDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: session } = useSession();
   const [bourbon, setBourbon] = useState<Bourbon | null>(null);
   const [previewImage, setPreviewImage] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [rating, setRating] = useState(5);
-  const [nose, setNose] = useState("");
-  const [palate, setPalate] = useState("");
-  const [finish, setFinish] = useState("");
-  const [notes, setNotes] = useState("");
+  const [scores, setScores] = useState({ appearance: 5, nose: 5, taste: 5, mouthfeel: 5, finish: 5 });
+  const [textNotes, setTextNotes] = useState({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
   const [saving, setSaving] = useState(false);
 
   const loadBourbon = () => {
@@ -62,6 +74,7 @@ export default function BourbonDetailPage() {
   if (!bourbon) return <p>Loading...</p>;
 
   const myReview = bourbon.reviews.find((r) => r.user.id === session?.user?.id);
+  const overallScore = Object.values(scores).reduce((a, b) => a + b, 0) / 5;
 
   const submitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,11 +84,17 @@ export default function BourbonDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         bourbonId: bourbon.id,
-        rating,
-        nose: nose || null,
-        palate: palate || null,
-        finish: finish || null,
-        notes: notes || null,
+        appearanceScore: scores.appearance,
+        appearanceNotes: textNotes.appearance || null,
+        noseScore: scores.nose,
+        nose: textNotes.nose || null,
+        tasteScore: scores.taste,
+        palate: textNotes.taste || null,
+        mouthfeelScore: scores.mouthfeel,
+        mouthfeel: textNotes.mouthfeel || null,
+        finishScore: scores.finish,
+        finish: textNotes.finish || null,
+        notes: textNotes.general || null,
       }),
     });
     if (res.ok) {
@@ -88,6 +107,13 @@ export default function BourbonDetailPage() {
     }
     setSaving(false);
   };
+
+  // Compute category averages across all reviews
+  const categoryAvgs = CATEGORIES.map((cat) => {
+    const key = cat.scoreKey as keyof Review;
+    const vals = bourbon.reviews.map((r) => r[key]).filter((v) => v != null) as number[];
+    return { label: cat.label, avg: vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null };
+  });
 
   return (
     <div className="space-y-6">
@@ -119,6 +145,27 @@ export default function BourbonDetailPage() {
         </div>
       </div>
 
+      {/* Category Score Averages */}
+      {bourbon.reviews.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle>Score Breakdown</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {categoryAvgs.map((cat) => (
+              <div key={cat.label} className="flex items-center gap-3">
+                <span className="w-28 text-sm font-medium">{cat.label}</span>
+                <div className="flex-1 bg-secondary rounded-full h-2">
+                  <div
+                    className="bg-primary rounded-full h-2 transition-all"
+                    style={{ width: cat.avg != null ? `${cat.avg * 10}%` : "0%" }}
+                  />
+                </div>
+                <span className="w-10 text-sm text-right">{cat.avg != null ? cat.avg.toFixed(1) : "—"}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Reviews ({bourbon.reviews.length})</CardTitle>
@@ -128,26 +175,35 @@ export default function BourbonDetailPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {showForm && (
-            <form onSubmit={submitReview} className="space-y-3 border rounded-md p-4">
-              <div className="space-y-2">
-                <Label>Rating: {rating}/10</Label>
-                <Slider min={1} max={10} step={1} value={[rating]} onValueChange={([v]) => setRating(v)} />
-              </div>
-              <div className="space-y-1">
-                <Label>Nose</Label>
-                <Textarea value={nose} onChange={(e) => setNose(e.target.value)} placeholder="Aroma notes..." rows={2} />
-              </div>
-              <div className="space-y-1">
-                <Label>Palate</Label>
-                <Textarea value={palate} onChange={(e) => setPalate(e.target.value)} placeholder="Taste notes..." rows={2} />
-              </div>
-              <div className="space-y-1">
-                <Label>Finish</Label>
-                <Textarea value={finish} onChange={(e) => setFinish(e.target.value)} placeholder="Finish notes..." rows={2} />
-              </div>
+            <form onSubmit={submitReview} className="space-y-4 border rounded-md p-4">
+              <p className="text-sm text-muted-foreground">Overall: <span className="font-bold text-foreground">{overallScore.toFixed(1)}/10</span></p>
+              {CATEGORIES.map((cat) => (
+                <div key={cat.key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>{cat.label}: {scores[cat.key as keyof typeof scores]}/10</Label>
+                    <span className="text-xs text-muted-foreground">{cat.desc}</span>
+                  </div>
+                  <Slider
+                    min={0} max={10} step={1}
+                    value={[scores[cat.key as keyof typeof scores]]}
+                    onValueChange={([v]) => setScores((prev) => ({ ...prev, [cat.key]: v }))}
+                  />
+                  <Textarea
+                    value={textNotes[cat.key as keyof typeof textNotes]}
+                    onChange={(e) => setTextNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
+                    placeholder={`${cat.label} notes (optional)...`}
+                    rows={1}
+                  />
+                </div>
+              ))}
               <div className="space-y-1">
                 <Label>Additional Notes</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Other thoughts..." rows={2} />
+                <Textarea
+                  value={textNotes.general}
+                  onChange={(e) => setTextNotes((prev) => ({ ...prev, general: e.target.value }))}
+                  placeholder="Other thoughts..."
+                  rows={2}
+                />
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>{saving ? "Submitting..." : "Submit Review"}</Button>
@@ -156,13 +212,26 @@ export default function BourbonDetailPage() {
             </form>
           )}
           {bourbon.reviews.map((review) => (
-            <div key={review.id} className="border rounded-md p-3 space-y-1">
+            <div key={review.id} className="border rounded-md p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{review.user.name || review.user.email}</span>
-                <Badge variant="secondary">{review.rating}/10</Badge>
+                <Badge variant="secondary">{review.rating.toFixed(1)}/10</Badge>
               </div>
+              <div className="grid grid-cols-5 gap-2 text-xs">
+                {CATEGORIES.map((cat) => {
+                  const score = review[cat.scoreKey as keyof Review] as number | null;
+                  return score != null ? (
+                    <div key={cat.key} className="text-center">
+                      <p className="text-muted-foreground">{cat.label}</p>
+                      <p className="font-medium">{score}/10</p>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+              {review.appearanceNotes && <p className="text-sm"><span className="text-muted-foreground">Appearance:</span> {review.appearanceNotes}</p>}
               {review.nose && <p className="text-sm"><span className="text-muted-foreground">Nose:</span> {review.nose}</p>}
-              {review.palate && <p className="text-sm"><span className="text-muted-foreground">Palate:</span> {review.palate}</p>}
+              {review.palate && <p className="text-sm"><span className="text-muted-foreground">Taste:</span> {review.palate}</p>}
+              {review.mouthfeel && <p className="text-sm"><span className="text-muted-foreground">Mouthfeel:</span> {review.mouthfeel}</p>}
               {review.finish && <p className="text-sm"><span className="text-muted-foreground">Finish:</span> {review.finish}</p>}
               {review.notes && <p className="text-sm"><span className="text-muted-foreground">Notes:</span> {review.notes}</p>}
               <p className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>

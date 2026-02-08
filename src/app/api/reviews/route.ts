@@ -7,10 +7,24 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const { bourbonId, meetingBourbonId, rating, nose, palate, finish, notes } = await req.json();
+  const {
+    bourbonId, meetingBourbonId,
+    appearanceScore, appearanceNotes,
+    noseScore, nose,
+    tasteScore, palate,
+    mouthfeelScore, mouthfeel,
+    finishScore, finish,
+    notes,
+  } = await req.json();
+
+  // Compute overall rating as average of 5 category scores
+  const scores = [appearanceScore, noseScore, tasteScore, mouthfeelScore, finishScore];
+  const validScores = scores.filter((s: number | null) => s != null) as number[];
+  const rating = validScores.length > 0
+    ? validScores.reduce((sum, s) => sum + s, 0) / validScores.length
+    : 0;
 
   if (meetingBourbonId) {
-    // Meeting review — one per user per meeting-bourbon
     const existing = await prisma.review.findUnique({
       where: { userId_meetingBourbonId: { userId: session.user.id, meetingBourbonId } },
     });
@@ -18,7 +32,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "You already reviewed this bourbon at this meeting" }, { status: 400 });
     }
   } else {
-    // Standalone review — one per user per bourbon (where no meeting)
     const existing = await prisma.review.findFirst({
       where: { userId: session.user.id, bourbonId, meetingBourbonId: { equals: null } },
     });
@@ -33,10 +46,12 @@ export async function POST(req: NextRequest) {
       bourbonId,
       meetingBourbonId: meetingBourbonId || null,
       rating,
-      nose,
-      palate,
-      finish,
-      notes,
+      appearanceScore, appearanceNotes: appearanceNotes || null,
+      noseScore, nose: nose || null,
+      tasteScore, palate: palate || null,
+      mouthfeelScore, mouthfeel: mouthfeel || null,
+      finishScore, finish: finish || null,
+      notes: notes || null,
     },
   });
   return NextResponse.json(review);
