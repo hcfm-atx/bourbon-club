@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { toast } from "sonner";
 
 interface Review {
   id: string;
@@ -14,7 +20,7 @@ interface Review {
   finish: string | null;
   notes: string | null;
   createdAt: string;
-  user: { name: string | null; email: string };
+  user: { id: string; name: string | null; email: string };
 }
 
 interface Bourbon {
@@ -36,14 +42,52 @@ interface Bourbon {
 
 export default function BourbonDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { data: session } = useSession();
   const [bourbon, setBourbon] = useState<Bourbon | null>(null);
   const [previewImage, setPreviewImage] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [nose, setNose] = useState("");
+  const [palate, setPalate] = useState("");
+  const [finish, setFinish] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const loadBourbon = () => {
     fetch(`/api/bourbons/${id}`).then((r) => r.json()).then(setBourbon);
-  }, [id]);
+  };
+
+  useEffect(() => { loadBourbon(); }, [id]);
 
   if (!bourbon) return <p>Loading...</p>;
+
+  const myReview = bourbon.reviews.find((r) => r.user.id === session?.user?.id);
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const res = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bourbonId: bourbon.id,
+        rating,
+        nose: nose || null,
+        palate: palate || null,
+        finish: finish || null,
+        notes: notes || null,
+      }),
+    });
+    if (res.ok) {
+      toast.success("Review submitted");
+      setShowForm(false);
+      loadBourbon();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to submit review");
+    }
+    setSaving(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -76,10 +120,41 @@ export default function BourbonDetailPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Reviews ({bourbon.reviews.length})</CardTitle>
+          {!myReview && !showForm && (
+            <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>Write Review</Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-3">
+          {showForm && (
+            <form onSubmit={submitReview} className="space-y-3 border rounded-md p-4">
+              <div className="space-y-2">
+                <Label>Rating: {rating}/10</Label>
+                <Slider min={1} max={10} step={1} value={[rating]} onValueChange={([v]) => setRating(v)} />
+              </div>
+              <div className="space-y-1">
+                <Label>Nose</Label>
+                <Textarea value={nose} onChange={(e) => setNose(e.target.value)} placeholder="Aroma notes..." rows={2} />
+              </div>
+              <div className="space-y-1">
+                <Label>Palate</Label>
+                <Textarea value={palate} onChange={(e) => setPalate(e.target.value)} placeholder="Taste notes..." rows={2} />
+              </div>
+              <div className="space-y-1">
+                <Label>Finish</Label>
+                <Textarea value={finish} onChange={(e) => setFinish(e.target.value)} placeholder="Finish notes..." rows={2} />
+              </div>
+              <div className="space-y-1">
+                <Label>Additional Notes</Label>
+                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Other thoughts..." rows={2} />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={saving}>{saving ? "Submitting..." : "Submit Review"}</Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              </div>
+            </form>
+          )}
           {bourbon.reviews.map((review) => (
             <div key={review.id} className="border rounded-md p-3 space-y-1">
               <div className="flex items-center justify-between">
@@ -93,7 +168,7 @@ export default function BourbonDetailPage() {
               <p className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
             </div>
           ))}
-          {bourbon.reviews.length === 0 && <p className="text-muted-foreground">No reviews yet.</p>}
+          {bourbon.reviews.length === 0 && !showForm && <p className="text-muted-foreground">No reviews yet.</p>}
         </CardContent>
       </Card>
       {previewImage && bourbon.imageUrl && (

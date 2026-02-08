@@ -9,19 +9,29 @@ export async function POST(req: NextRequest) {
 
   const { bourbonId, meetingBourbonId, rating, nose, palate, finish, notes } = await req.json();
 
-  // Check for existing review
-  const existing = await prisma.review.findUnique({
-    where: { userId_meetingBourbonId: { userId: session.user.id, meetingBourbonId } },
-  });
-  if (existing) {
-    return NextResponse.json({ error: "You already reviewed this bourbon at this meeting" }, { status: 400 });
+  if (meetingBourbonId) {
+    // Meeting review — one per user per meeting-bourbon
+    const existing = await prisma.review.findUnique({
+      where: { userId_meetingBourbonId: { userId: session.user.id, meetingBourbonId } },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "You already reviewed this bourbon at this meeting" }, { status: 400 });
+    }
+  } else {
+    // Standalone review — one per user per bourbon (where no meeting)
+    const existing = await prisma.review.findFirst({
+      where: { userId: session.user.id, bourbonId, meetingBourbonId: null },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "You already reviewed this bourbon" }, { status: 400 });
+    }
   }
 
   const review = await prisma.review.create({
     data: {
       userId: session.user.id,
       bourbonId,
-      meetingBourbonId,
+      meetingBourbonId: meetingBourbonId || null,
       rating,
       nose,
       palate,
