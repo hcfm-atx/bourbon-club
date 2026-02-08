@@ -7,12 +7,16 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({}, { status: 401 });
 
+  const clubId = session.user.currentClubId;
+  if (!clubId) return NextResponse.json({ totalCollected: 0, totalExpenses: 0, balance: 0, recentExpenses: [] });
+
   const [paidPayments, expenses] = await Promise.all([
     prisma.payment.findMany({
-      where: { paid: true },
+      where: { paid: true, duesPeriod: { clubId } },
       include: { duesPeriod: { select: { amount: true } } },
     }),
     prisma.expense.findMany({
+      where: { clubId },
       orderBy: { date: "desc" },
       include: { recordedBy: { select: { id: true, name: true, email: true } } },
     }),

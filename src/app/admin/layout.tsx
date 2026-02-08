@@ -5,7 +5,11 @@ import { Navbar } from "@/components/layout/navbar";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session) redirect("/login");
+
+  // Allow access if user is club ADMIN or SUPER_ADMIN
+  const isAdmin = session.user.clubRole === "ADMIN" || session.user.systemRole === "SUPER_ADMIN";
+  if (!isAdmin) {
     redirect("/dashboard");
   }
 

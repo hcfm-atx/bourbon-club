@@ -9,7 +9,11 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json([], { status: 401 });
 
+  const clubId = session.user.currentClubId;
+  if (!clubId) return NextResponse.json([]);
+
   const bourbons = await prisma.bourbon.findMany({
+    where: { clubId },
     include: {
       reviews: { select: { rating: true } },
     },
@@ -33,7 +37,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({}, { status: 401 });
   }
 
+  const clubId = session.user.currentClubId;
+  if (!clubId) return NextResponse.json({ error: "No active club" }, { status: 400 });
+
   const data = await req.json();
-  const bourbon = await prisma.bourbon.create({ data });
+  const bourbon = await prisma.bourbon.create({ data: { ...data, clubId } });
   return NextResponse.json(bourbon);
 }

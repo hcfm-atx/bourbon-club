@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isClubAdmin } from "@/lib/session";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json([], { status: 401 });
 
+  const clubId = session.user.currentClubId;
+  if (!clubId) return NextResponse.json([]);
+
   const periods = await prisma.duesPeriod.findMany({
+    where: { clubId },
     include: {
       payments: {
         include: { user: { select: { id: true, name: true, email: true } } },
@@ -20,22 +25,28 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !isClubAdmin(session)) {
     return NextResponse.json({}, { status: 403 });
   }
+
+  const clubId = session.user.currentClubId;
+  if (!clubId) return NextResponse.json({ error: "No active club" }, { status: 400 });
 
   const { name, amount, dueDate, frequency } = await req.json();
 
   // Create the dues period
   const period = await prisma.duesPeriod.create({
-    data: { name, amount, dueDate: new Date(dueDate), frequency },
+    data: { clubId, name, amount, dueDate: new Date(dueDate), frequency },
   });
 
-  // Auto-generate payment records for all members
-  const members = await prisma.user.findMany({ select: { id: true } });
+  // Auto-generate payment records for club members
+  const members = await prisma.clubMember.findMany({
+    where: { clubId },
+    select: { userId: true },
+  });
   await prisma.payment.createMany({
     data: members.map((m) => ({
-      userId: m.id,
+      userId: m.userId,
       duesPeriodId: period.id,
     })),
   });

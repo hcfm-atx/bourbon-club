@@ -14,6 +14,16 @@ enum Role {
   MEMBER
 }
 
+enum SystemRole {
+  USER
+  SUPER_ADMIN
+}
+
+enum ClubRole {
+  ADMIN
+  MEMBER
+}
+
 enum PollStatus {
   OPEN
   CLOSED
@@ -83,32 +93,82 @@ model VerificationToken {
 // ─── Core Models ─────────────────────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String     @id @default(cuid())
+  email         String     @unique
   emailVerified DateTime?
   name          String?
   phone         String?
-  smsOptIn      Boolean   @default(false)
-  role          Role      @default(MEMBER)
+  smsOptIn      Boolean    @default(false)
+  role          Role       @default(MEMBER)
+  systemRole    SystemRole @default(USER)
+  currentClubId String?
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  votes    PollVote[]
-  reviews  Review[]
-  payments Payment[]
-  expenses Expense[]
+  accounts    Account[]
+  sessions    Session[]
+  votes       PollVote[]
+  reviews     Review[]
+  payments    Payment[]
+  expenses    Expense[]
+  memberships ClubMember[]
+  currentClub Club?        @relation("CurrentClub", fields: [currentClubId], references: [id], onDelete: SetNull)
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     ClubMember[]
+  invites     ClubInvite[]
+  bourbons    Bourbon[]
+  meetings    Meeting[]
+  polls       Poll[]
+  duesPeriods DuesPeriod[]
+  expenses    Expense[]
+  settings    AppSettings?
+  currentUsers User[]   @relation("CurrentClub")
+}
+
+model ClubMember {
+  id        String   @id @default(cuid())
+  userId    String
+  clubId    String
+  role      ClubRole @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId])
+}
+
+model ClubInvite {
+  id        String   @id @default(cuid())
+  clubId    String
+  email     String
+  role      ClubRole @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, email])
 }
 
 model Poll {
   id        String     @id @default(cuid())
+  clubId    String?
   title     String
   status    PollStatus @default(OPEN)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  club    Club?        @relation(fields: [clubId], references: [id], onDelete: Cascade)
   options PollOption[]
   meeting Meeting?
 }
@@ -136,6 +196,7 @@ model PollVote {
 
 model Meeting {
   id             String    @id @default(cuid())
+  clubId         String?
   date           DateTime
   title          String
   description    String?
@@ -145,12 +206,14 @@ model Meeting {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  club     Club?            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   poll     Poll?            @relation(fields: [pollId], references: [id], onDelete: SetNull)
   bourbons MeetingBourbon[]
 }
 
 model Bourbon {
   id            String      @id @default(cuid())
+  clubId        String?
   name          String
   distillery    String?
   proof         Float?
@@ -163,6 +226,7 @@ model Bourbon {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
+  club     Club?            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   meetings MeetingBourbon[]
   reviews  Review[]
 }
@@ -208,6 +272,7 @@ model Review {
 
 model DuesPeriod {
   id        String    @id @default(cuid())
+  clubId    String?
   name      String
   amount    Float
   dueDate   DateTime
@@ -215,6 +280,7 @@ model DuesPeriod {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  club     Club?     @relation(fields: [clubId], references: [id], onDelete: Cascade)
   payments Payment[]
 }
 
@@ -236,6 +302,7 @@ model Payment {
 
 model Expense {
   id           String           @id @default(cuid())
+  clubId       String?
   description  String
   amount       Float
   date         DateTime
@@ -243,15 +310,19 @@ model Expense {
   notes        String?
   recordedById String
   recordedBy   User             @relation(fields: [recordedById], references: [id], onDelete: Cascade)
+  club         Club?            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 }
 
 model AppSettings {
-  id                 String   @id @default("default")
+  id                 String   @id @default(cuid())
+  clubId             String?  @unique
   clubName           String   @default("Bourbon Club")
   venmoHandle        String?
   paypalEmail        String?
   reminderDaysBefore Int      @default(7)
   updatedAt          DateTime @updatedAt
+
+  club Club? @relation(fields: [clubId], references: [id], onDelete: Cascade)
 }

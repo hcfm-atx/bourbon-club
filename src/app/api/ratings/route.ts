@@ -7,6 +7,9 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json([], { status: 401 });
 
+  const clubId = session.user.currentClubId;
+  if (!clubId) return NextResponse.json({ bourbons: [], filterOptions: { distilleries: [], types: [], regions: [] } });
+
   const params = req.nextUrl.searchParams;
   const distillery = params.get("distillery");
   const type = params.get("type");
@@ -20,7 +23,7 @@ export async function GET(req: NextRequest) {
   const userId = params.get("userId");
 
   // Build bourbon filter
-  const bourbonWhere: Record<string, unknown> = {};
+  const bourbonWhere: Record<string, unknown> = { clubId };
   if (distillery) bourbonWhere.distillery = distillery;
   if (type) bourbonWhere.type = type;
   if (region) bourbonWhere.region = region;
@@ -89,8 +92,9 @@ export async function GET(req: NextRequest) {
     })
     .sort((a, b) => b.avgRating - a.avgRating);
 
-  // Also return filter options
+  // Also return filter options scoped to club
   const allBourbons = await prisma.bourbon.findMany({
+    where: { clubId },
     select: { distillery: true, type: true, region: true },
   });
   const filterOptions = {

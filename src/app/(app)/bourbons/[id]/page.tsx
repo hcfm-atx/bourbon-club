@@ -68,7 +68,7 @@ export default function BourbonDetailPage() {
   const [editScores, setEditScores] = useState({ appearance: 5, nose: 5, taste: 5, mouthfeel: 5, finish: 5 });
   const [editNotes, setEditNotes] = useState({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
 
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
 
   const loadBourbon = () => {
     fetch(`/api/bourbons/${id}`).then((r) => r.json()).then(setBourbon);

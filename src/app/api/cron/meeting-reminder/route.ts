@@ -9,42 +9,54 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const settings = await prisma.appSettings.findUnique({ where: { id: "default" } });
-  const reminderDays = settings?.reminderDaysBefore || 7;
-
-  const now = new Date();
-  const reminderDate = new Date(now);
-  reminderDate.setDate(reminderDate.getDate() + reminderDays);
-
-  // Find meetings within the reminder window that haven't been reminded
-  const meetings = await prisma.meeting.findMany({
-    where: {
-      date: { gte: now, lte: reminderDate },
-      reminderSentAt: null,
-    },
+  // Iterate over all clubs
+  const clubs = await prisma.club.findMany({
+    include: { settings: true },
   });
 
-  if (meetings.length === 0) {
-    return NextResponse.json({ message: "No meetings to remind about" });
-  }
+  let totalMeetings = 0;
+  let totalPhones = 0;
 
-  // Get opted-in users
-  const users = await prisma.user.findMany({
-    where: { smsOptIn: true, phone: { not: null } },
-    select: { phone: true },
-  });
+  for (const club of clubs) {
+    const reminderDays = club.settings?.reminderDaysBefore || 7;
+    const now = new Date();
+    const reminderDate = new Date(now);
+    reminderDate.setDate(reminderDate.getDate() + reminderDays);
 
-  const phones = users.map((u) => u.phone!);
-
-  for (const meeting of meetings) {
-    await sendMeetingReminder(phones, meeting.title, meeting.date, meeting.location);
-    await prisma.meeting.update({
-      where: { id: meeting.id },
-      data: { reminderSentAt: new Date() },
+    // Find meetings within the reminder window that haven't been reminded
+    const meetings = await prisma.meeting.findMany({
+      where: {
+        clubId: club.id,
+        date: { gte: now, lte: reminderDate },
+        reminderSentAt: null,
+      },
     });
+
+    if (meetings.length === 0) continue;
+
+    // Get opted-in club members
+    const members = await prisma.clubMember.findMany({
+      where: { clubId: club.id },
+      include: { user: { select: { phone: true, smsOptIn: true } } },
+    });
+
+    const phones = members
+      .filter((m) => m.user.smsOptIn && m.user.phone)
+      .map((m) => m.user.phone!);
+
+    for (const meeting of meetings) {
+      await sendMeetingReminder(phones, meeting.title, meeting.date, meeting.location);
+      await prisma.meeting.update({
+        where: { id: meeting.id },
+        data: { reminderSentAt: new Date() },
+      });
+    }
+
+    totalMeetings += meetings.length;
+    totalPhones += phones.length;
   }
 
   return NextResponse.json({
-    message: `Sent reminders for ${meetings.length} meeting(s) to ${phones.length} member(s)`,
+    message: `Sent reminders for ${totalMeetings} meeting(s) across ${clubs.length} club(s) to ${totalPhones} member(s)`,
   });
 }
