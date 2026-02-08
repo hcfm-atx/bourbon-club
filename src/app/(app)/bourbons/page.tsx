@@ -21,6 +21,7 @@ interface Bourbon {
 export default function BourbonsPage() {
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
   const [search, setSearch] = useState("");
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
@@ -45,18 +46,21 @@ export default function BourbonsPage() {
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((bourbon) => (
-          <Link key={bourbon.id} href={`/bourbons/${bourbon.id}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-              {bourbon.imageUrl && (
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={bourbon.imageUrl}
-                    alt={bourbon.name}
-                    fill
-                    className="object-cover rounded-t-lg"
-                  />
-                </div>
-              )}
+          <Card key={bourbon.id} className="hover:shadow-md transition-shadow h-full">
+            {bourbon.imageUrl && (
+              <div
+                className="relative h-48 w-full cursor-zoom-in"
+                onClick={() => setPreviewImage({ url: bourbon.imageUrl!, name: bourbon.name })}
+              >
+                <Image
+                  src={bourbon.imageUrl}
+                  alt={bourbon.name}
+                  fill
+                  className="object-cover rounded-t-lg"
+                />
+              </div>
+            )}
+            <Link href={`/bourbons/${bourbon.id}`}>
               <CardHeader>
                 <CardTitle className="text-lg">{bourbon.name}</CardTitle>
               </CardHeader>
@@ -72,11 +76,27 @@ export default function BourbonsPage() {
                   )}
                 </div>
               </CardContent>
-            </Card>
-          </Link>
+            </Link>
+          </Card>
         ))}
       </div>
       {filtered.length === 0 && <p className="text-muted-foreground">No bourbons found.</p>}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] w-full h-full">
+            <Image
+              src={previewImage.url}
+              alt={previewImage.name}
+              fill
+              className="object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

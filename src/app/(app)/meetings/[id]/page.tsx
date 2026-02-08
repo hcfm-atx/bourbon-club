@@ -54,7 +54,7 @@ export default function MeetingDetailPage() {
       <div>
         <h1 className="text-3xl font-bold">{meeting.title}</h1>
         <p className="text-muted-foreground">
-          {new Date(meeting.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+          {new Date(meeting.date).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "long", month: "long", day: "numeric", year: "numeric" })}
           {meeting.location && ` — ${meeting.location}`}
         </p>
         {meeting.description && <p className="mt-2">{meeting.description}</p>}

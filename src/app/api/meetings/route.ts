@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const { title, date, description, location } = await req.json();
   const meeting = await prisma.meeting.create({
-    data: { title, date: new Date(date), description, location },
+    data: { title, date: new Date(date + "T12:00:00Z"), description, location },
   });
   return NextResponse.json(meeting);
 }

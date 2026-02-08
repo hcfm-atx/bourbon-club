@@ -37,6 +37,7 @@ interface Bourbon {
 export default function BourbonDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [bourbon, setBourbon] = useState<Bourbon | null>(null);
+  const [previewImage, setPreviewImage] = useState(false);
 
   useEffect(() => {
     fetch(`/api/bourbons/${id}`).then((r) => r.json()).then(setBourbon);
@@ -48,7 +49,10 @@ export default function BourbonDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-6">
         {bourbon.imageUrl && (
-          <div className="relative w-full md:w-64 h-64 shrink-0">
+          <div
+            className="relative w-full md:w-64 h-64 shrink-0 cursor-zoom-in"
+            onClick={() => setPreviewImage(true)}
+          >
             <Image src={bourbon.imageUrl} alt={bourbon.name} fill className="object-cover rounded-lg" />
           </div>
         )}
@@ -92,6 +96,21 @@ export default function BourbonDetailPage() {
           {bourbon.reviews.length === 0 && <p className="text-muted-foreground">No reviews yet.</p>}
         </CardContent>
       </Card>
+      {previewImage && bourbon.imageUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setPreviewImage(false)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] w-full h-full">
+            <Image
+              src={bourbon.imageUrl}
+              alt={bourbon.name}
+              fill
+              className="object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

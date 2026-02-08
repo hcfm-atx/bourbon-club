@@ -46,7 +46,7 @@ export default function AdminMeetingsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                {new Date(meeting.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                {new Date(meeting.date).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                 {meeting.location && ` — ${meeting.location}`}
               </p>
               {meeting.bourbons.length > 0 && (

@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const data = await req.json();
-  if (data.date) data.date = new Date(data.date);
+  if (data.date) data.date = new Date(data.date + "T12:00:00Z");
   const meeting = await prisma.meeting.update({ where: { id }, data });
   return NextResponse.json(meeting);
 }
