@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+hcfm-key
+hcfm-key.pub
 
 # debug
 npm-debug.log*
