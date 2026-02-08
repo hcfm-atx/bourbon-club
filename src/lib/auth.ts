@@ -3,6 +3,8 @@ import EmailProvider from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 
+console.log("[auth] GMAIL_USER defined:", !!process.env.GMAIL_USER, "GMAIL_APP_PASSWORD defined:", !!process.env.GMAIL_APP_PASSWORD);
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
   providers: [
