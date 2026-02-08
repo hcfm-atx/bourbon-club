@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   } else {
     // Standalone review — one per user per bourbon (where no meeting)
     const existing = await prisma.review.findFirst({
-      where: { userId: session.user.id, bourbonId, meetingBourbonId: null },
+      where: { userId: session.user.id, bourbonId, meetingBourbonId: { equals: null } },
     });
     if (existing) {
       return NextResponse.json({ error: "You already reviewed this bourbon" }, { status: 400 });
