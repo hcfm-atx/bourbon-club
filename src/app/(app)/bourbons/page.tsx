@@ -270,13 +270,21 @@ export default function BourbonsPage() {
                 </div>
               </CardContent>
             </Link>
-            {(isAdmin || bourbon.createdById === session?.user?.id) && (
+            {isAdmin && (
               <div className="flex items-center gap-2 px-6 pb-4">
-                {isAdmin && (
-                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); togglePurchased(bourbon); }}>
-                    {bourbon.purchased ? "Unmark Purchased" : "Mark Purchased"}
-                  </Button>
-                )}
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); togglePurchased(bourbon); }}>
+                  {bourbon.purchased ? "Unmark Purchased" : "Mark Purchased"}
+                </Button>
+                <Link href={`/admin/bourbons/${bourbon.id}`} onClick={(e) => e.stopPropagation()}>
+                  <Button variant="outline" size="sm">Edit</Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); deleteBourbon(bourbon.id); }}>
+                  Delete
+                </Button>
+              </div>
+            )}
+            {!isAdmin && bourbon.createdById === session?.user?.id && (
+              <div className="flex items-center gap-2 px-6 pb-4">
                 <Link href={`/admin/bourbons/${bourbon.id}`} onClick={(e) => e.stopPropagation()}>
                   <Button variant="outline" size="sm">Edit</Button>
                 </Link>
