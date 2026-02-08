@@ -24,6 +24,16 @@ interface Bourbon {
   reviewCount: number;
 }
 
+interface CatalogEntry {
+  name: string;
+  distillery: string | null;
+  proof: number | null;
+  type: string;
+  age: number | null;
+  region: string | null;
+  cost: number | null;
+}
+
 export default function BourbonsPage() {
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
   const [search, setSearch] = useState("");
@@ -34,6 +44,8 @@ export default function BourbonsPage() {
   const [form, setForm] = useState({
     name: "", distillery: "", proof: "", type: "BOURBON",
   });
+  const [suggestions, setSuggestions] = useState<CatalogEntry[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const loadBourbons = () => {
     fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
@@ -42,6 +54,23 @@ export default function BourbonsPage() {
   useEffect(() => { loadBourbons(); }, []);
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const searchCatalog = async (q: string) => {
+    if (q.length < 2) { setSuggestions([]); return; }
+    const res = await fetch(`/api/bourbon-catalog?q=${encodeURIComponent(q)}`);
+    if (res.ok) setSuggestions(await res.json());
+  };
+
+  const selectSuggestion = (entry: CatalogEntry) => {
+    setForm({
+      name: entry.name,
+      distillery: entry.distillery || "",
+      proof: entry.proof ? String(entry.proof) : "",
+      type: entry.type,
+    });
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,9 +131,44 @@ export default function BourbonsPage() {
           <CardHeader><CardTitle>Add Bourbon</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label>Name</Label>
-                <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Buffalo Trace" required />
+                <Input
+                  value={form.name}
+                  onChange={(e) => {
+                    update("name", e.target.value);
+                    searchCatalog(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  placeholder="Start typing to search..."
+                  required
+                  autoComplete="off"
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowSuggestions(false)} />
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-md z-50 max-h-64 overflow-y-auto">
+                      {suggestions.map((s) => (
+                        <button
+                          key={s.name}
+                          type="button"
+                          onClick={() => selectSuggestion(s)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex justify-between items-center"
+                        >
+                          <div>
+                            <span className="font-medium">{s.name}</span>
+                            {s.distillery && <span className="text-muted-foreground ml-2">— {s.distillery}</span>}
+                          </div>
+                          <div className="text-xs text-muted-foreground shrink-0 ml-2">
+                            {s.proof && `${s.proof}°`}
+                            {s.type && ` · ${s.type.replace("_", " ")}`}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Distillery</Label>
