@@ -50,7 +50,7 @@ export function Navbar() {
 
   if (!session) return null;
 
-  const currentClub = clubs.find((c) => c.id === session.user.currentClubId);
+  const currentClub = clubs.find((c) => c.id === session.user.currentClubId) || clubs[0] || null;
   const links = pathname.startsWith("/admin") ? adminLinks : memberLinks;
 
   const switchClub = async (clubId: string) => {
