@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      { hostname: "*.public.blob.vercel-storage.com" },
+    ],
   },
 };
 

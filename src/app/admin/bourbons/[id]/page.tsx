@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ export default function EditBourbonPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     name: "", distillery: "", proof: "", cost: "", secondaryCost: "",
     type: "BOURBON", region: "", age: "", imageUrl: "",
@@ -52,6 +54,18 @@ export default function EditBourbonPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    let imageUrl: string | null = form.imageUrl || null;
+    if (imageFile) {
+      const fd = new FormData();
+      fd.append("file", imageFile);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      if (uploadRes.ok) {
+        const { url } = await uploadRes.json();
+        imageUrl = url;
+      }
+    }
+
     const res = await fetch(`/api/bourbons/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -64,6 +78,7 @@ export default function EditBourbonPage() {
         type: form.type,
         region: form.region || null,
         age: form.age ? parseInt(form.age) : null,
+        imageUrl,
       }),
     });
     if (res.ok) {
@@ -156,6 +171,15 @@ export default function EditBourbonPage() {
                 <Label>Region</Label>
                 <Input value={form.region} onChange={(e) => update("region", e.target.value)} />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Image</Label>
+              {form.imageUrl && !imageFile && (
+                <div className="relative h-48 w-full">
+                  <Image src={form.imageUrl} alt={form.name} fill className="object-cover rounded-lg" />
+                </div>
+              )}
+              <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
             </div>
             <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
           </form>
