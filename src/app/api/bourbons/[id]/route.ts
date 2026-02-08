@@ -32,23 +32,40 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isClubAdmin(session)) {
+  if (!session) return NextResponse.json({}, { status: 401 });
+
+  const { id } = await params;
+  const bourbon = await prisma.bourbon.findUnique({ where: { id } });
+  if (!bourbon) return NextResponse.json({}, { status: 404 });
+
+  const isOwner = bourbon.createdById === session.user.id;
+  if (!isOwner && !isClubAdmin(session)) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  const { id } = await params;
+  // Only admins can toggle purchased status
   const data = await req.json();
-  const bourbon = await prisma.bourbon.update({ where: { id }, data });
-  return NextResponse.json(bourbon);
+  if (data.purchased !== undefined && !isClubAdmin(session)) {
+    delete data.purchased;
+  }
+
+  const updated = await prisma.bourbon.update({ where: { id }, data });
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isClubAdmin(session)) {
+  if (!session) return NextResponse.json({}, { status: 401 });
+
+  const { id } = await params;
+  const bourbon = await prisma.bourbon.findUnique({ where: { id } });
+  if (!bourbon) return NextResponse.json({}, { status: 404 });
+
+  const isOwner = bourbon.createdById === session.user.id;
+  if (!isOwner && !isClubAdmin(session)) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  const { id } = await params;
   await prisma.bourbon.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

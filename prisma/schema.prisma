@@ -111,12 +111,13 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  accounts    Account[]
-  sessions    Session[]
-  votes       PollVote[]
-  reviews     Review[]
-  payments    Payment[]
-  expenses    Expense[]
+  accounts        Account[]
+  sessions        Session[]
+  votes           PollVote[]
+  reviews         Review[]
+  payments        Payment[]
+  expenses        Expense[]
+  createdBourbons Bourbon[]  @relation("CreatedBourbons")
   memberships ClubMember[]
   currentClub Club?        @relation("CurrentClub", fields: [currentClubId], references: [id], onDelete: SetNull)
 }
@@ -223,6 +224,7 @@ model Meeting {
 model Bourbon {
   id            String      @id @default(cuid())
   clubId        String?
+  createdById   String?
   name          String
   distillery    String?
   proof         Float?
@@ -237,6 +239,7 @@ model Bourbon {
   updatedAt     DateTime    @updatedAt
 
   club        Club?            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy   User?            @relation("CreatedBourbons", fields: [createdById], references: [id], onDelete: SetNull)
   meetings    MeetingBourbon[]
   reviews     Review[]
   pollOptions PollOption[]

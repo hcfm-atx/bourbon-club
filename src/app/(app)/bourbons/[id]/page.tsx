@@ -42,6 +42,7 @@ interface Bourbon {
   region: string | null;
   age: number | null;
   imageUrl: string | null;
+  createdById: string | null;
   avgRating: number | null;
   reviewCount: number;
   reviews: Review[];
@@ -206,7 +207,7 @@ export default function BourbonDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">{bourbon.name}</h1>
-            {isAdmin && (
+            {(isAdmin || bourbon.createdById === session?.user?.id) && (
               <div className="flex items-center gap-2">
                 <Link href={`/admin/bourbons/${bourbon.id}`}>
                   <Button variant="outline" size="sm">Edit</Button>
@@ -342,7 +343,7 @@ export default function BourbonDetailPage() {
                     <span className="text-sm font-medium">{review.user.name || review.user.email}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{review.rating.toFixed(1)}/10</Badge>
-                      {isAdmin && (
+                      {(isAdmin || review.user.id === session?.user?.id) && (
                         <>
                           <Button variant="outline" size="sm" onClick={() => startEditing(review)}>Edit</Button>
                           <Button variant="outline" size="sm" onClick={() => deleteReview(review.id)}>Delete</Button>

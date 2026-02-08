@@ -6,11 +6,17 @@ import { isClubAdmin } from "@/lib/session";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isClubAdmin(session)) {
+  if (!session) return NextResponse.json({}, { status: 401 });
+
+  const { id } = await params;
+  const review = await prisma.review.findUnique({ where: { id } });
+  if (!review) return NextResponse.json({}, { status: 404 });
+
+  const isOwner = review.userId === session.user.id;
+  if (!isOwner && !isClubAdmin(session)) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  const { id } = await params;
   const {
     appearanceScore, appearanceNotes,
     noseScore, nose,
@@ -26,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     ? validScores.reduce((sum, s) => sum + s, 0) / validScores.length
     : 0;
 
-  const review = await prisma.review.update({
+  const updated = await prisma.review.update({
     where: { id },
     data: {
       rating,
@@ -38,16 +44,22 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       notes: notes || null,
     },
   });
-  return NextResponse.json(review);
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isClubAdmin(session)) {
+  if (!session) return NextResponse.json({}, { status: 401 });
+
+  const { id } = await params;
+  const review = await prisma.review.findUnique({ where: { id } });
+  if (!review) return NextResponse.json({}, { status: 404 });
+
+  const isOwner = review.userId === session.user.id;
+  if (!isOwner && !isClubAdmin(session)) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  const { id } = await params;
   await prisma.review.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

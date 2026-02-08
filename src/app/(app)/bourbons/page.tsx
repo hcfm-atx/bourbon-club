@@ -24,6 +24,7 @@ interface Bourbon {
   avgRating: number | null;
   reviewCount: number;
   purchased: boolean;
+  createdById: string | null;
 }
 
 interface CatalogEntry {
@@ -269,11 +270,13 @@ export default function BourbonsPage() {
                 </div>
               </CardContent>
             </Link>
-            {isAdmin && (
+            {(isAdmin || bourbon.createdById === session?.user?.id) && (
               <div className="flex items-center gap-2 px-6 pb-4">
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); togglePurchased(bourbon); }}>
-                  {bourbon.purchased ? "Unmark Purchased" : "Mark Purchased"}
-                </Button>
+                {isAdmin && (
+                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); togglePurchased(bourbon); }}>
+                    {bourbon.purchased ? "Unmark Purchased" : "Mark Purchased"}
+                  </Button>
+                )}
                 <Link href={`/admin/bourbons/${bourbon.id}`} onClick={(e) => e.stopPropagation()}>
                   <Button variant="outline" size="sm">Edit</Button>
                 </Link>
