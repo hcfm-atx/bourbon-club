@@ -20,7 +20,7 @@ export default function LoginPage() {
     const res = await signIn("email", { email, callbackUrl: "/dashboard", redirect: false });
     setLoading(false);
     if (res?.error) {
-      setError("You need an invitation to join. Ask a club admin to invite you.");
+      setError("Something went wrong. Please try again.");
     } else {
       setSubmitted(true);
     }

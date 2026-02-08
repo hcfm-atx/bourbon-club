@@ -27,22 +27,6 @@ export const authOptions: NextAuthOptions = {
     verifyRequest: "/verify-request",
   },
   callbacks: {
-    async signIn({ user, email: emailObj }) {
-      // During magic link send, only allow existing users or invited emails
-      if (emailObj?.verificationRequest) {
-        const userEmail = user.email;
-        if (!userEmail) return false;
-
-        const existingUser = await prisma.user.findUnique({ where: { email: userEmail } });
-        if (existingUser) return true;
-
-        const invite = await prisma.clubInvite.findFirst({ where: { email: userEmail } });
-        if (invite) return true;
-
-        return false;
-      }
-      return true;
-    },
     async jwt({ token, user, trigger }) {
       if (user) {
         const dbUser = await prisma.user.findUnique({
