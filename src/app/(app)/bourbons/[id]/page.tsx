@@ -327,17 +327,21 @@ export default function BourbonDetailPage() {
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-5 gap-2 text-xs">
-                    {CATEGORIES.map((cat) => {
-                      const score = review[cat.scoreKey as keyof Review] as number | null;
-                      return score != null ? (
-                        <div key={cat.key} className="text-center">
-                          <p className="text-muted-foreground">{cat.label}</p>
-                          <p className="font-medium">{score}/10</p>
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
+                  {CATEGORIES.some((cat) => review[cat.scoreKey as keyof Review] != null) ? (
+                    <div className="grid grid-cols-5 gap-2 text-xs">
+                      {CATEGORIES.map((cat) => {
+                        const score = review[cat.scoreKey as keyof Review] as number | null;
+                        return (
+                          <div key={cat.key} className="text-center">
+                            <p className="text-muted-foreground">{cat.label}</p>
+                            <p className="font-medium">{score != null ? `${score}/10` : "—"}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Legacy review — no category scores{isAdmin && ". Click Edit to add them."}</p>
+                  )}
                   {review.appearanceNotes && <p className="text-sm"><span className="text-muted-foreground">Appearance:</span> {review.appearanceNotes}</p>}
                   {review.nose && <p className="text-sm"><span className="text-muted-foreground">Nose:</span> {review.nose}</p>}
                   {review.palate && <p className="text-sm"><span className="text-muted-foreground">Taste:</span> {review.palate}</p>}
