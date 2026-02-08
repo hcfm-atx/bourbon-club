@@ -37,10 +37,23 @@ export default function AdminPollDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [poll, setPoll] = useState<Poll | null>(null);
+  const [notifying, setNotifying] = useState(false);
 
   useEffect(() => {
     fetch(`/api/polls/${id}`).then((r) => r.json()).then(setPoll);
   }, [id]);
+
+  const notifyMembers = async () => {
+    setNotifying(true);
+    const res = await fetch(`/api/polls/${id}/notify`, { method: "POST" });
+    if (res.ok) {
+      const { sms, email } = await res.json();
+      toast.success(`Notified ${sms} via SMS, ${email} via email`);
+    } else {
+      toast.error("Failed to send notifications");
+    }
+    setNotifying(false);
+  };
 
   const closePoll = async (selectedOptionId: string) => {
     const message = poll?.type === "BOURBON"
@@ -68,6 +81,11 @@ export default function AdminPollDetailPage() {
         <h1 className="text-3xl font-bold">{poll.title}</h1>
         <Badge variant={poll.status === "OPEN" ? "default" : "secondary"}>{poll.status}</Badge>
         {poll.type === "BOURBON" && <Badge variant="outline">Bourbon Poll</Badge>}
+        {poll.status === "OPEN" && (
+          <Button variant="outline" size="sm" onClick={notifyMembers} disabled={notifying}>
+            {notifying ? "Sending..." : "Notify Members"}
+          </Button>
+        )}
       </div>
       <div className="grid gap-4">
         {poll.options.map((option) => (
