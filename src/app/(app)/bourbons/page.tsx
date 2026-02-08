@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
@@ -38,6 +39,7 @@ interface CatalogEntry {
 }
 
 export default function BourbonsPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
@@ -230,12 +232,6 @@ export default function BourbonsPage() {
         </Card>
       )}
 
-      {/* Debug: remove after testing */}
-      {session && (
-        <p className="text-xs text-muted-foreground">
-          Role: clubRole={session.user?.clubRole || "none"}, systemRole={session.user?.systemRole || "none"}, isAdmin={String(isAdmin)}
-        </p>
-      )}
       <Input
         placeholder="Search by name or distillery..."
         value={search}
@@ -244,11 +240,15 @@ export default function BourbonsPage() {
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((bourbon) => (
-          <Card key={bourbon.id} className="hover:shadow-md transition-shadow h-full">
+          <Card
+            key={bourbon.id}
+            className="hover:shadow-md transition-shadow h-full cursor-pointer"
+            onClick={() => router.push(`/bourbons/${bourbon.id}`)}
+          >
             {bourbon.imageUrl && (
               <div
                 className="relative h-48 w-full cursor-zoom-in"
-                onClick={() => setPreviewImage({ url: bourbon.imageUrl!, name: bourbon.name })}
+                onClick={(e) => { e.stopPropagation(); setPreviewImage({ url: bourbon.imageUrl!, name: bourbon.name }); }}
               >
                 <Image
                   src={bourbon.imageUrl}
@@ -258,43 +258,41 @@ export default function BourbonsPage() {
                 />
               </div>
             )}
-            <Link href={`/bourbons/${bourbon.id}`}>
-              <CardHeader>
-                <CardTitle className="text-lg">{bourbon.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {bourbon.distillery || "Unknown distillery"}
-                  {bourbon.proof && ` — ${bourbon.proof}°`}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="secondary">{bourbon.type.replace("_", " ")}</Badge>
-                  {bourbon.avgRating !== null && (
-                    <Badge variant="outline">{bourbon.avgRating.toFixed(1)}/10 ({bourbon.reviewCount})</Badge>
-                  )}
-                  {bourbon.purchased && <Badge className="bg-amber-600">Purchased</Badge>}
-                </div>
-              </CardContent>
-            </Link>
+            <CardHeader>
+              <CardTitle className="text-lg">{bourbon.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {bourbon.distillery || "Unknown distillery"}
+                {bourbon.proof && ` — ${bourbon.proof}°`}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="secondary">{bourbon.type.replace("_", " ")}</Badge>
+                {bourbon.avgRating !== null && (
+                  <Badge variant="outline">{bourbon.avgRating.toFixed(1)}/10 ({bourbon.reviewCount})</Badge>
+                )}
+                {bourbon.purchased && <Badge className="bg-amber-600">Purchased</Badge>}
+              </div>
+            </CardContent>
             {isAdmin && (
-              <div className="flex items-center gap-2 px-6 pb-4">
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); togglePurchased(bourbon); }}>
+              <div className="flex items-center gap-2 px-6 pb-4" onClick={(e) => e.stopPropagation()}>
+                <Button variant="outline" size="sm" onClick={() => togglePurchased(bourbon)}>
                   {bourbon.purchased ? "Unmark Purchased" : "Mark Purchased"}
                 </Button>
-                <Link href={`/admin/bourbons/${bourbon.id}`} onClick={(e) => e.stopPropagation()}>
+                <Link href={`/admin/bourbons/${bourbon.id}`}>
                   <Button variant="outline" size="sm">Edit</Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); deleteBourbon(bourbon.id); }}>
+                <Button variant="outline" size="sm" onClick={() => deleteBourbon(bourbon.id)}>
                   Delete
                 </Button>
               </div>
             )}
             {!isAdmin && bourbon.createdById === session?.user?.id && (
-              <div className="flex items-center gap-2 px-6 pb-4">
-                <Link href={`/admin/bourbons/${bourbon.id}`} onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2 px-6 pb-4" onClick={(e) => e.stopPropagation()}>
+                <Link href={`/admin/bourbons/${bourbon.id}`}>
                   <Button variant="outline" size="sm">Edit</Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); deleteBourbon(bourbon.id); }}>
+                <Button variant="outline" size="sm" onClick={() => deleteBourbon(bourbon.id)}>
                   Delete
                 </Button>
               </div>
