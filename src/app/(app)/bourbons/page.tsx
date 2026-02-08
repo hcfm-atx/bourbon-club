@@ -5,7 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+
+const BOURBON_TYPES = ["BOURBON", "RYE", "WHEAT", "SINGLE_MALT", "BLEND", "OTHER"];
 
 interface Bourbon {
   id: string;
@@ -22,10 +28,59 @@ export default function BourbonsPage() {
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
   const [search, setSearch] = useState("");
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [form, setForm] = useState({
+    name: "", distillery: "", proof: "", type: "BOURBON",
+  });
 
-  useEffect(() => {
+  const loadBourbons = () => {
     fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
-  }, []);
+  };
+
+  useEffect(() => { loadBourbons(); }, []);
+
+  const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name) { toast.error("Name is required"); return; }
+    setSaving(true);
+
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      const fd = new FormData();
+      fd.append("file", imageFile);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      if (uploadRes.ok) {
+        const { url } = await uploadRes.json();
+        imageUrl = url;
+      }
+    }
+
+    const res = await fetch("/api/bourbons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.name,
+        distillery: form.distillery || null,
+        proof: form.proof ? parseFloat(form.proof) : null,
+        type: form.type,
+        imageUrl,
+      }),
+    });
+    if (res.ok) {
+      toast.success("Bourbon added");
+      setShowForm(false);
+      setForm({ name: "", distillery: "", proof: "", type: "BOURBON" });
+      setImageFile(null);
+      loadBourbons();
+    } else {
+      toast.error("Failed to add bourbon");
+    }
+    setSaving(false);
+  };
 
   const filtered = bourbons.filter(
     (b) =>
@@ -37,7 +92,51 @@ export default function BourbonsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Bourbons</h1>
+        <Button onClick={() => setShowForm(!showForm)}>
+          {showForm ? "Cancel" : "Add Bourbon"}
+        </Button>
       </div>
+
+      {showForm && (
+        <Card>
+          <CardHeader><CardTitle>Add Bourbon</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Buffalo Trace" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Distillery</Label>
+                <Input value={form.distillery} onChange={(e) => update("distillery", e.target.value)} placeholder="Buffalo Trace Distillery" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Proof</Label>
+                  <Input type="number" step="0.1" value={form.proof} onChange={(e) => update("proof", e.target.value)} placeholder="90" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select value={form.type} onValueChange={(v) => update("type", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {BOURBON_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>{t.replace("_", " ")}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Image</Label>
+                <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+              </div>
+              <Button type="submit" disabled={saving}>{saving ? "Adding..." : "Add Bourbon"}</Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
       <Input
         placeholder="Search by name or distillery..."
         value={search}

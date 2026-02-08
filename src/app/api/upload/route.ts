@@ -5,8 +5,8 @@ import { saveUpload } from "@/lib/upload";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({}, { status: 403 });
+  if (!session) {
+    return NextResponse.json({}, { status: 401 });
   }
 
   const formData = await req.formData();
