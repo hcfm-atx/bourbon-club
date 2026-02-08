@@ -75,6 +75,22 @@ export default function AdminUsersPage() {
     }
   };
 
+  const deleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Permanently delete ${email}? This cannot be undone.`)) return;
+    const res = await fetch("/api/admin/users", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (res.ok) {
+      toast.success("User deleted");
+      loadData();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to delete");
+    }
+  };
+
   const toggleClubRole = async (userId: string, clubId: string, currentRole: string) => {
     const newRole = currentRole === "ADMIN" ? "MEMBER" : "ADMIN";
     const res = await fetch(`/api/admin/users/${userId}/memberships`, {
@@ -155,56 +171,70 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {isAdding ? (
-                        <div className="flex items-center gap-1">
-                          <select
-                            value={addingClub.clubId}
-                            onChange={(e) => setAddingClub({ ...addingClub, clubId: e.target.value })}
-                            className="h-8 rounded border border-input bg-background px-2 text-xs"
-                          >
-                            <option value="">Select club</option>
-                            {availableClubs.map((c) => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={addingClub.role}
-                            onChange={(e) => setAddingClub({ ...addingClub, role: e.target.value })}
-                            className="h-8 rounded border border-input bg-background px-2 text-xs"
-                          >
-                            <option value="MEMBER">Member</option>
-                            <option value="ADMIN">Admin</option>
-                          </select>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="h-8 text-xs"
-                            disabled={!addingClub.clubId}
-                            onClick={() => addToClub(user.id, addingClub.clubId, addingClub.role)}
-                          >
-                            Add
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 text-xs"
-                            onClick={() => setAddingClub(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        availableClubs.length > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs"
-                            onClick={() => setAddingClub({ userId: user.id, clubId: "", role: "MEMBER" })}
-                          >
-                            Add to Club
-                          </Button>
-                        )
-                      )}
+                      <div className="flex items-center gap-2">
+                        {isAdding ? (
+                          <div className="flex items-center gap-1">
+                            <select
+                              value={addingClub.clubId}
+                              onChange={(e) => setAddingClub({ ...addingClub, clubId: e.target.value })}
+                              className="h-8 rounded border border-input bg-background px-2 text-xs"
+                            >
+                              <option value="">Select club</option>
+                              {availableClubs.map((c) => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={addingClub.role}
+                              onChange={(e) => setAddingClub({ ...addingClub, role: e.target.value })}
+                              className="h-8 rounded border border-input bg-background px-2 text-xs"
+                            >
+                              <option value="MEMBER">Member</option>
+                              <option value="ADMIN">Admin</option>
+                            </select>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="h-8 text-xs"
+                              disabled={!addingClub.clubId}
+                              onClick={() => addToClub(user.id, addingClub.clubId, addingClub.role)}
+                            >
+                              Add
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 text-xs"
+                              onClick={() => setAddingClub(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            {availableClubs.length > 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs"
+                                onClick={() => setAddingClub({ userId: user.id, clubId: "", role: "MEMBER" })}
+                              >
+                                Add to Club
+                              </Button>
+                            )}
+                            {user.id !== session?.user?.id && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="text-xs"
+                                onClick={() => deleteUser(user.id, user.email)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
