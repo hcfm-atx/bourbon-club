@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendSMS } from "@/lib/twilio";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -19,7 +20,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  const { email, role } = await req.json();
+  const { email, role, phone } = await req.json();
+
+  const club = await prisma.club.findUnique({ where: { id: clubId }, select: { name: true } });
+  const clubName = club?.name || "Bourbon Club";
 
   // Check if already a member
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -41,6 +45,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: { currentClubId: clubId },
       });
     }
+
+    // Notify via SMS
+    const notifyPhone = phone || existingUser.phone;
+    if (notifyPhone) {
+      await sendSMS(notifyPhone, `You've been added to ${clubName}! Log in to check it out.`).catch(() => {});
+    }
+
     return NextResponse.json({ added: true });
   }
 
@@ -55,5 +66,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const invite = await prisma.clubInvite.create({
     data: { clubId, email, role: role || "MEMBER" },
   });
+
+  // Send SMS invite if phone provided
+  if (phone) {
+    await sendSMS(phone, `You've been invited to join ${clubName}! Sign up with your email (${email}) to get started.`).catch(() => {});
+  }
+
   return NextResponse.json(invite);
 }

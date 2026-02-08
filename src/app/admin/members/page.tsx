@@ -22,6 +22,7 @@ export default function AdminMembersPage() {
   const { data: session } = useSession();
   const [members, setMembers] = useState<Member[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
 
   const clubId = session?.user?.currentClubId;
 
@@ -62,12 +63,13 @@ export default function AdminMembersPage() {
     const res = await fetch(`/api/clubs/${clubId}/invite`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail, role: "MEMBER" }),
+      body: JSON.stringify({ email: inviteEmail, phone: invitePhone || undefined, role: "MEMBER" }),
     });
     if (res.ok) {
       const data = await res.json();
       toast.success(data.added ? "Member added" : "Invite sent");
       setInviteEmail("");
+      setInvitePhone("");
       // Reload members
       fetch("/api/members").then((r) => r.json()).then(setMembers);
     } else {
@@ -85,7 +87,7 @@ export default function AdminMembersPage() {
           <CardTitle>Invite Member</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={inviteMember} className="flex gap-2">
+          <form onSubmit={inviteMember} className="flex gap-2 flex-wrap">
             <Input
               type="email"
               value={inviteEmail}
@@ -93,6 +95,13 @@ export default function AdminMembersPage() {
               placeholder="email@example.com"
               className="max-w-sm"
               required
+            />
+            <Input
+              type="tel"
+              value={invitePhone}
+              onChange={(e) => setInvitePhone(e.target.value)}
+              placeholder="Phone (optional, for SMS)"
+              className="max-w-[200px]"
             />
             <Button type="submit">Invite</Button>
           </form>

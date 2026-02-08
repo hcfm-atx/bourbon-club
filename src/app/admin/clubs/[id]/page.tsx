@@ -39,6 +39,7 @@ export default function AdminClubDetailPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState<"MEMBER" | "ADMIN">("MEMBER");
   const [saving, setSaving] = useState(false);
 
@@ -77,7 +78,7 @@ export default function AdminClubDetailPage() {
     const res = await fetch(`/api/clubs/${id}/invite`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+      body: JSON.stringify({ email: inviteEmail, phone: invitePhone || undefined, role: inviteRole }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -87,6 +88,7 @@ export default function AdminClubDetailPage() {
         toast.success("Invite created");
       }
       setInviteEmail("");
+      setInvitePhone("");
       loadClub();
     } else {
       const data = await res.json();
@@ -183,8 +185,8 @@ export default function AdminClubDetailPage() {
           <CardTitle>Invite Member</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={invite} className="flex gap-2 items-end">
-            <div className="flex-1 space-y-1">
+          <form onSubmit={invite} className="flex gap-2 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px] space-y-1">
               <Label>Email</Label>
               <Input
                 type="email"
@@ -192,6 +194,15 @@ export default function AdminClubDetailPage() {
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="member@example.com"
                 required
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Phone (for SMS)</Label>
+              <Input
+                type="tel"
+                value={invitePhone}
+                onChange={(e) => setInvitePhone(e.target.value)}
+                placeholder="+15551234567"
               />
             </div>
             <div className="space-y-1">
