@@ -60,17 +60,20 @@ export default function AdminMembersPage() {
   const inviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clubId) return;
+    if (!inviteEmail && !invitePhone) {
+      toast.error("Email or phone is required");
+      return;
+    }
     const res = await fetch(`/api/clubs/${clubId}/invite`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail, phone: invitePhone || undefined, role: "MEMBER" }),
+      body: JSON.stringify({ email: inviteEmail || undefined, phone: invitePhone || undefined, role: "MEMBER" }),
     });
     if (res.ok) {
       const data = await res.json();
-      toast.success(data.added ? "Member added" : "Invite sent");
+      toast.success(data.added ? "Member added" : data.smsSent ? "SMS invite sent" : "Invite sent");
       setInviteEmail("");
       setInvitePhone("");
-      // Reload members
       fetch("/api/members").then((r) => r.json()).then(setMembers);
     } else {
       const data = await res.json();
@@ -94,13 +97,12 @@ export default function AdminMembersPage() {
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="email@example.com"
               className="max-w-sm"
-              required
             />
             <Input
               type="tel"
               value={invitePhone}
               onChange={(e) => setInvitePhone(e.target.value)}
-              placeholder="Phone (optional, for SMS)"
+              placeholder="Phone number"
               className="max-w-[200px]"
             />
             <Button type="submit">Invite</Button>

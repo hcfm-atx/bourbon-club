@@ -75,18 +75,18 @@ export default function AdminClubDetailPage() {
 
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!inviteEmail && !invitePhone) {
+      toast.error("Email or phone is required");
+      return;
+    }
     const res = await fetch(`/api/clubs/${id}/invite`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail, phone: invitePhone || undefined, role: inviteRole }),
+      body: JSON.stringify({ email: inviteEmail || undefined, phone: invitePhone || undefined, role: inviteRole }),
     });
     if (res.ok) {
       const data = await res.json();
-      if (data.added) {
-        toast.success("Member added directly");
-      } else {
-        toast.success("Invite created");
-      }
+      toast.success(data.added ? "Member added directly" : data.smsSent ? "SMS invite sent" : "Invite created");
       setInviteEmail("");
       setInvitePhone("");
       loadClub();
@@ -193,7 +193,6 @@ export default function AdminClubDetailPage() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="member@example.com"
-                required
               />
             </div>
             <div className="space-y-1">
