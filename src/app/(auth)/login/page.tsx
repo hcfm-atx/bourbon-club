@@ -10,11 +10,20 @@ import { Label } from "@/components/ui/label";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signIn("email", { email, callbackUrl: "/dashboard" });
-    setSubmitted(true);
+    setError("");
+    setLoading(true);
+    const res = await signIn("email", { email, callbackUrl: "/dashboard", redirect: false });
+    setLoading(false);
+    if (res?.error) {
+      setError("You need an invitation to join. Ask a club admin to invite you.");
+    } else {
+      setSubmitted(true);
+    }
   };
 
   return (
@@ -42,8 +51,11 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Send Magic Link
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Sending..." : "Send Magic Link"}
               </Button>
             </form>
           )}
