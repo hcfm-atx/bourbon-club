@@ -58,14 +58,14 @@ export async function POST(req: NextRequest) {
   let oldRoles: Record<string, string> = {};
   try {
     const rows = await prisma.$queryRaw<Array<{ id: string; role: string }>>`
-      SELECT id, role FROM "User" WHERE role IS NOT NULL
+      SELECT id, role::"text" FROM "User" WHERE role IS NOT NULL
     `;
     for (const row of rows) {
       oldRoles[row.id] = row.role;
     }
     log.push(`Read ${Object.keys(oldRoles).length} old user roles`);
-  } catch {
-    log.push("No old role column found");
+  } catch (e) {
+    log.push(`Could not read old role column: ${e}`);
   }
 
   const users = await prisma.user.findMany();
@@ -104,6 +104,29 @@ export async function POST(req: NextRequest) {
     }
   }
   log.push(`Created ${membersCreated} club memberships`);
+
+  // Also promote the currently logged-in user to SUPER_ADMIN if they aren't already
+  if (session?.user?.id) {
+    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (currentUser && currentUser.systemRole === "USER") {
+      await prisma.user.update({
+        where: { id: currentUser.id },
+        data: { systemRole: "SUPER_ADMIN" },
+      });
+      log.push(`Promoted current user ${currentUser.email} to SUPER_ADMIN`);
+    }
+    // Also make them club ADMIN
+    const membership = await prisma.clubMember.findUnique({
+      where: { userId_clubId: { userId: session.user.id, clubId: club.id } },
+    });
+    if (membership && membership.role !== "ADMIN") {
+      await prisma.clubMember.update({
+        where: { id: membership.id },
+        data: { role: "ADMIN" },
+      });
+      log.push(`Made current user club ADMIN`);
+    }
+  }
 
   // 4. Migrate AppSettings
   const clubSettings = await prisma.appSettings.findUnique({ where: { clubId: club.id } });
