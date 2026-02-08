@@ -9,9 +9,21 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
+interface BourbonInfo {
+  id: string;
+  name: string;
+  distillery: string | null;
+  proof: number | null;
+  type: string;
+  imageUrl: string | null;
+}
+
 interface PollOption {
   id: string;
-  date: string;
+  date: string | null;
+  bourbonId: string | null;
+  label: string | null;
+  bourbon: BourbonInfo | null;
   selected: boolean;
   votes: { id: string; user: { id: string; name: string | null; email: string } }[];
 }
@@ -19,6 +31,7 @@ interface PollOption {
 interface Poll {
   id: string;
   title: string;
+  type: "DATE" | "BOURBON";
   status: "OPEN" | "CLOSED";
   options: PollOption[];
 }
@@ -93,9 +106,22 @@ export default function PollVotePage() {
                     />
                   )}
                   <div>
-                    <p className="font-medium">
-                      {new Date(option.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-                    </p>
+                    {poll.type === "BOURBON" && option.bourbon ? (
+                      <>
+                        <p className="font-medium">{option.bourbon.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {option.bourbon.distillery || "Unknown distillery"}
+                          {option.bourbon.proof && ` — ${option.bourbon.proof}°`}
+                          {option.bourbon.type && ` · ${option.bourbon.type.replace("_", " ")}`}
+                        </p>
+                      </>
+                    ) : option.date ? (
+                      <p className="font-medium">
+                        {new Date(option.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                      </p>
+                    ) : (
+                      <p className="font-medium">{option.label || "Option"}</p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {option.votes.length} vote{option.votes.length !== 1 ? "s" : ""}
                       {option.votes.length > 0 && ` — ${option.votes.map((v) => v.user.name || v.user.email).join(", ")}`}

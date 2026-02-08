@@ -2,6 +2,8 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +32,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <Link href="/" className="inline-block mx-auto mb-2">
+            <Image src="/logo.svg" alt="Bourbon Club" width={64} height={64} />
+          </Link>
           <CardTitle className="text-2xl font-bold">Bourbon Club</CardTitle>
           <CardDescription>Sign in with your email to continue</CardDescription>
         </CardHeader>

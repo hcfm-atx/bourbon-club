@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ const CATEGORIES = [
 
 export default function BourbonDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { data: session } = useSession();
   const [bourbon, setBourbon] = useState<Bourbon | null>(null);
   const [previewImage, setPreviewImage] = useState(false);
@@ -69,6 +71,17 @@ export default function BourbonDetailPage() {
   const [editNotes, setEditNotes] = useState({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
 
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
+
+  const deleteBourbon = async () => {
+    if (!confirm("Delete this bourbon? This cannot be undone.")) return;
+    const res = await fetch(`/api/bourbons/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.success("Bourbon deleted");
+      router.push("/bourbons");
+    } else {
+      toast.error("Failed to delete bourbon");
+    }
+  };
 
   const loadBourbon = () => {
     fetch(`/api/bourbons/${id}`).then((r) => r.json()).then(setBourbon);
@@ -191,7 +204,17 @@ export default function BourbonDetailPage() {
           </div>
         )}
         <div>
-          <h1 className="text-3xl font-bold">{bourbon.name}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">{bourbon.name}</h1>
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                <Link href={`/admin/bourbons/${bourbon.id}`}>
+                  <Button variant="outline" size="sm">Edit</Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={deleteBourbon}>Delete</Button>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2 mt-2">
             <Badge variant="secondary">{bourbon.type.replace("_", " ")}</Badge>
             {bourbon.avgRating !== null && (

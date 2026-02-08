@@ -13,7 +13,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     where: { id },
     include: {
       options: {
-        include: { votes: { include: { user: { select: { id: true, name: true, email: true } } } } },
+        include: {
+          votes: { include: { user: { select: { id: true, name: true, email: true } } } },
+          bourbon: { select: { id: true, name: true, distillery: true, proof: true, type: true, imageUrl: true } },
+        },
         orderBy: { date: "asc" },
       },
     },

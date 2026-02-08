@@ -38,6 +38,11 @@ enum BourbonType {
   OTHER
 }
 
+enum PollType {
+  DATE
+  BOURBON
+}
+
 enum Frequency {
   MONTHLY
   QUARTERLY
@@ -164,6 +169,7 @@ model Poll {
   id        String     @id @default(cuid())
   clubId    String?
   title     String
+  type      PollType   @default(DATE)
   status    PollStatus @default(OPEN)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -174,13 +180,16 @@ model Poll {
 }
 
 model PollOption {
-  id       String   @id @default(cuid())
-  pollId   String
-  date     DateTime
-  selected Boolean  @default(false)
+  id        String    @id @default(cuid())
+  pollId    String
+  date      DateTime?
+  bourbonId String?
+  label     String?
+  selected  Boolean   @default(false)
 
-  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  votes PollVote[]
+  poll    Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  bourbon Bourbon?   @relation(fields: [bourbonId], references: [id], onDelete: SetNull)
+  votes   PollVote[]
 }
 
 model PollVote {
@@ -223,12 +232,14 @@ model Bourbon {
   region        String?
   age           Int?
   imageUrl      String?
+  purchased     Boolean     @default(false)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  club     Club?            @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  meetings MeetingBourbon[]
-  reviews  Review[]
+  club        Club?            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  meetings    MeetingBourbon[]
+  reviews     Review[]
+  pollOptions PollOption[]
 }
 
 model MeetingBourbon {

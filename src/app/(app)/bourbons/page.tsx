@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ interface Bourbon {
   imageUrl: string | null;
   avgRating: number | null;
   reviewCount: number;
+  purchased: boolean;
 }
 
 interface CatalogEntry {
@@ -35,6 +37,8 @@ interface CatalogEntry {
 }
 
 export default function BourbonsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
   const [search, setSearch] = useState("");
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
@@ -49,6 +53,30 @@ export default function BourbonsPage() {
 
   const loadBourbons = () => {
     fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
+  };
+
+  const deleteBourbon = async (id: string) => {
+    if (!confirm("Delete this bourbon? This cannot be undone.")) return;
+    const res = await fetch(`/api/bourbons/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.success("Bourbon deleted");
+      setBourbons((prev) => prev.filter((b) => b.id !== id));
+    } else {
+      toast.error("Failed to delete bourbon");
+    }
+  };
+
+  const togglePurchased = async (bourbon: Bourbon) => {
+    const res = await fetch(`/api/bourbons/${bourbon.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ purchased: !bourbon.purchased }),
+    });
+    if (res.ok) {
+      setBourbons((prev) => prev.map((b) => b.id === bourbon.id ? { ...b, purchased: !b.purchased } : b));
+    } else {
+      toast.error("Failed to update bourbon");
+    }
   };
 
   useEffect(() => { loadBourbons(); }, []);
@@ -237,9 +265,23 @@ export default function BourbonsPage() {
                   {bourbon.avgRating !== null && (
                     <Badge variant="outline">{bourbon.avgRating.toFixed(1)}/10 ({bourbon.reviewCount})</Badge>
                   )}
+                  {bourbon.purchased && <Badge className="bg-amber-600">Purchased</Badge>}
                 </div>
               </CardContent>
             </Link>
+            {isAdmin && (
+              <div className="flex items-center gap-2 px-6 pb-4">
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); togglePurchased(bourbon); }}>
+                  {bourbon.purchased ? "Unmark Purchased" : "Mark Purchased"}
+                </Button>
+                <Link href={`/admin/bourbons/${bourbon.id}`} onClick={(e) => e.stopPropagation()}>
+                  <Button variant="outline" size="sm">Edit</Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); deleteBourbon(bourbon.id); }}>
+                  Delete
+                </Button>
+              </div>
+            )}
           </Card>
         ))}
       </div>

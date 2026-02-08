@@ -6,15 +6,18 @@ import { getClubId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json([], { status: 401 });
 
   const clubId = await getClubId(session.user.id, session.user.currentClubId);
   if (!clubId) return NextResponse.json([]);
 
+  const { searchParams } = new URL(req.url);
+  const purchasedOnly = searchParams.get("purchased") === "true";
+
   const bourbons = await prisma.bourbon.findMany({
-    where: { clubId },
+    where: { clubId, ...(purchasedOnly ? { purchased: true } : {}) },
     include: {
       reviews: { select: { rating: true } },
     },

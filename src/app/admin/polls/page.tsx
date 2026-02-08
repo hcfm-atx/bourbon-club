@@ -10,9 +10,10 @@ import { toast } from "sonner";
 interface Poll {
   id: string;
   title: string;
+  type: "DATE" | "BOURBON";
   status: "OPEN" | "CLOSED";
   createdAt: string;
-  options: { id: string; date: string; votes: { id: string }[] }[];
+  options: { id: string; date: string | null; label: string | null; votes: { id: string }[] }[];
 }
 
 export default function AdminPollsPage() {
@@ -48,7 +49,7 @@ export default function AdminPollsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-3">
-                {poll.options.length} date options &middot; {poll.options.reduce((sum, o) => sum + o.votes.length, 0)} total votes
+                {poll.options.length} {poll.type === "BOURBON" ? "bourbon" : "date"} options &middot; {poll.options.reduce((sum, o) => sum + o.votes.length, 0)} total votes
               </p>
               <div className="flex gap-2">
                 <Link href={`/admin/polls/${poll.id}`}>

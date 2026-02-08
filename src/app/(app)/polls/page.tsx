@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 interface Poll {
   id: string;
   title: string;
+  type: "DATE" | "BOURBON";
   status: "OPEN" | "CLOSED";
-  options: { id: string; date: string; selected: boolean; votes: { id: string }[] }[];
+  options: { id: string; date: string | null; label: string | null; selected: boolean; votes: { id: string }[] }[];
 }
 
 export default function PollsPage() {
@@ -32,7 +33,7 @@ export default function PollsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-3">
-                {poll.options.length} date options
+                {poll.options.length} {poll.type === "BOURBON" ? "bourbon" : "date"} options
               </p>
               <Link href={`/polls/${poll.id}`}>
                 <Button variant="outline" size="sm">

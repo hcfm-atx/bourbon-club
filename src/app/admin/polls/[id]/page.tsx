@@ -7,9 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
+interface BourbonInfo {
+  id: string;
+  name: string;
+  distillery: string | null;
+  proof: number | null;
+  type: string;
+}
+
 interface PollOption {
   id: string;
-  date: string;
+  date: string | null;
+  bourbonId: string | null;
+  label: string | null;
+  bourbon: BourbonInfo | null;
   selected: boolean;
   votes: { id: string; user: { id: string; name: string | null; email: string } }[];
 }
@@ -17,6 +28,7 @@ interface PollOption {
 interface Poll {
   id: string;
   title: string;
+  type: "DATE" | "BOURBON";
   status: "OPEN" | "CLOSED";
   options: PollOption[];
 }
@@ -31,7 +43,10 @@ export default function AdminPollDetailPage() {
   }, [id]);
 
   const closePoll = async (selectedOptionId: string) => {
-    if (!confirm("Close this poll and create a meeting for the selected date?")) return;
+    const message = poll?.type === "BOURBON"
+      ? "Close this poll and create a meeting with the selected bourbon?"
+      : "Close this poll and create a meeting for the selected date?";
+    if (!confirm(message)) return;
     const res = await fetch(`/api/polls/${id}/close`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -52,13 +67,26 @@ export default function AdminPollDetailPage() {
       <div className="flex items-center gap-3">
         <h1 className="text-3xl font-bold">{poll.title}</h1>
         <Badge variant={poll.status === "OPEN" ? "default" : "secondary"}>{poll.status}</Badge>
+        {poll.type === "BOURBON" && <Badge variant="outline">Bourbon Poll</Badge>}
       </div>
       <div className="grid gap-4">
         {poll.options.map((option) => (
           <Card key={option.id} className={option.selected ? "border-green-500" : ""}>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">
-                {new Date(option.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                {poll.type === "BOURBON" && option.bourbon ? (
+                  <span>
+                    {option.bourbon.name}
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                      {option.bourbon.distillery && `${option.bourbon.distillery} · `}
+                      {option.bourbon.proof && `${option.bourbon.proof}°`}
+                    </span>
+                  </span>
+                ) : option.date ? (
+                  new Date(option.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+                ) : (
+                  option.label || "Option"
+                )}
               </CardTitle>
               <Badge variant="secondary">{option.votes.length} votes</Badge>
             </CardHeader>

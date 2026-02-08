@@ -25,19 +25,43 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: { status: "CLOSED" },
   });
 
-  // Optionally create a meeting from the selected date
+  // Optionally create a meeting from the selected option
   if (createMeeting) {
     const option = await prisma.pollOption.findUnique({ where: { id: selectedOptionId } });
-    const poll = await prisma.poll.findUnique({ where: { id } });
+    const poll = await prisma.poll.findUnique({
+      where: { id },
+      include: { options: { where: { selected: true } } },
+    });
     if (option && poll) {
-      await prisma.meeting.create({
-        data: {
-          clubId: poll.clubId,
-          title: poll.title,
-          date: option.date,
-          pollId: id,
-        },
-      });
+      if (poll.type === "BOURBON") {
+        // For bourbon polls: create meeting at current date, attach selected bourbon(s)
+        const selectedOptions = await prisma.pollOption.findMany({
+          where: { pollId: id, selected: true },
+        });
+        await prisma.meeting.create({
+          data: {
+            clubId: poll.clubId,
+            title: poll.title,
+            date: new Date(),
+            pollId: id,
+            bourbons: {
+              create: selectedOptions
+                .filter((o) => o.bourbonId)
+                .map((o) => ({ bourbonId: o.bourbonId! })),
+            },
+          },
+        });
+      } else {
+        // DATE poll: use the selected date
+        await prisma.meeting.create({
+          data: {
+            clubId: poll.clubId,
+            title: poll.title,
+            date: option.date!,
+            pollId: id,
+          },
+        });
+      }
     }
   }
 
