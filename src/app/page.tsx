@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import Image from "next/image";
 import Link from "next/link";
 
 export default async function Home() {
@@ -14,7 +13,8 @@ export default async function Home() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="flex flex-col items-center justify-center px-4 pt-24 pb-16">
-        <Image src="/logo.svg" alt="Bourbon Club" width={96} height={96} className="mb-6" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt="Bourbon Club" width={96} height={96} className="mb-6" />
         <h1 className="text-5xl font-bold tracking-tight text-center">Bourbon Club</h1>
         <p className="mt-4 text-lg text-muted-foreground text-center max-w-md">
           Organize tastings, review whiskeys, and manage your club — all in one place.
