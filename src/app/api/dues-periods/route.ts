@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isClubAdmin } from "@/lib/session";
+import { isClubAdmin, getClubId } from "@/lib/session";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json([], { status: 401 });
 
-  const clubId = session.user.currentClubId;
+  const clubId = await getClubId(session.user.id, session.user.currentClubId);
   if (!clubId) return NextResponse.json([]);
 
   const periods = await prisma.duesPeriod.findMany({
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  const clubId = session.user.currentClubId;
+  const clubId = await getClubId(session.user.id, session.user.currentClubId);
   if (!clubId) return NextResponse.json({ error: "No active club" }, { status: 400 });
 
   const { name, amount, dueDate, frequency } = await req.json();
