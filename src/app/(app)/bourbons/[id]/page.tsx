@@ -64,6 +64,11 @@ export default function BourbonDetailPage() {
   const [scores, setScores] = useState({ appearance: 5, nose: 5, taste: 5, mouthfeel: 5, finish: 5 });
   const [textNotes, setTextNotes] = useState({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
   const [saving, setSaving] = useState(false);
+  const [editingReview, setEditingReview] = useState<string | null>(null);
+  const [editScores, setEditScores] = useState({ appearance: 5, nose: 5, taste: 5, mouthfeel: 5, finish: 5 });
+  const [editNotes, setEditNotes] = useState({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
+
+  const isAdmin = session?.user?.role === "ADMIN";
 
   const loadBourbon = () => {
     fetch(`/api/bourbons/${id}`).then((r) => r.json()).then(setBourbon);
@@ -106,6 +111,65 @@ export default function BourbonDetailPage() {
       toast.error(data.error || "Failed to submit review");
     }
     setSaving(false);
+  };
+
+  const startEditing = (review: Review) => {
+    setEditingReview(review.id);
+    setEditScores({
+      appearance: review.appearanceScore ?? 5,
+      nose: review.noseScore ?? 5,
+      taste: review.tasteScore ?? 5,
+      mouthfeel: review.mouthfeelScore ?? 5,
+      finish: review.finishScore ?? 5,
+    });
+    setEditNotes({
+      appearance: review.appearanceNotes || "",
+      nose: review.nose || "",
+      taste: review.palate || "",
+      mouthfeel: review.mouthfeel || "",
+      finish: review.finish || "",
+      general: review.notes || "",
+    });
+  };
+
+  const saveEdit = async (reviewId: string) => {
+    setSaving(true);
+    const res = await fetch(`/api/reviews/${reviewId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appearanceScore: editScores.appearance,
+        appearanceNotes: editNotes.appearance || null,
+        noseScore: editScores.nose,
+        nose: editNotes.nose || null,
+        tasteScore: editScores.taste,
+        palate: editNotes.taste || null,
+        mouthfeelScore: editScores.mouthfeel,
+        mouthfeel: editNotes.mouthfeel || null,
+        finishScore: editScores.finish,
+        finish: editNotes.finish || null,
+        notes: editNotes.general || null,
+      }),
+    });
+    if (res.ok) {
+      toast.success("Review updated");
+      setEditingReview(null);
+      loadBourbon();
+    } else {
+      toast.error("Failed to update review");
+    }
+    setSaving(false);
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    if (!confirm("Delete this review?")) return;
+    const res = await fetch(`/api/reviews/${reviewId}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.success("Review deleted");
+      loadBourbon();
+    } else {
+      toast.error("Failed to delete review");
+    }
   };
 
   // Compute category averages across all reviews
@@ -213,28 +277,76 @@ export default function BourbonDetailPage() {
           )}
           {bourbon.reviews.map((review) => (
             <div key={review.id} className="border rounded-md p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{review.user.name || review.user.email}</span>
-                <Badge variant="secondary">{review.rating.toFixed(1)}/10</Badge>
-              </div>
-              <div className="grid grid-cols-5 gap-2 text-xs">
-                {CATEGORIES.map((cat) => {
-                  const score = review[cat.scoreKey as keyof Review] as number | null;
-                  return score != null ? (
-                    <div key={cat.key} className="text-center">
-                      <p className="text-muted-foreground">{cat.label}</p>
-                      <p className="font-medium">{score}/10</p>
+              {editingReview === review.id ? (
+                <div className="space-y-4">
+                  <p className="text-sm font-medium">Editing review by {review.user.name || review.user.email}</p>
+                  <p className="text-sm text-muted-foreground">Overall: <span className="font-bold text-foreground">{(Object.values(editScores).reduce((a, b) => a + b, 0) / 5).toFixed(1)}/10</span></p>
+                  {CATEGORIES.map((cat) => (
+                    <div key={cat.key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>{cat.label}: {editScores[cat.key as keyof typeof editScores]}/10</Label>
+                      </div>
+                      <Slider
+                        min={0} max={10} step={1}
+                        value={[editScores[cat.key as keyof typeof editScores]]}
+                        onValueChange={([v]) => setEditScores((prev) => ({ ...prev, [cat.key]: v }))}
+                      />
+                      <Textarea
+                        value={editNotes[cat.key as keyof typeof editNotes]}
+                        onChange={(e) => setEditNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
+                        placeholder={`${cat.label} notes...`}
+                        rows={1}
+                      />
                     </div>
-                  ) : null;
-                })}
-              </div>
-              {review.appearanceNotes && <p className="text-sm"><span className="text-muted-foreground">Appearance:</span> {review.appearanceNotes}</p>}
-              {review.nose && <p className="text-sm"><span className="text-muted-foreground">Nose:</span> {review.nose}</p>}
-              {review.palate && <p className="text-sm"><span className="text-muted-foreground">Taste:</span> {review.palate}</p>}
-              {review.mouthfeel && <p className="text-sm"><span className="text-muted-foreground">Mouthfeel:</span> {review.mouthfeel}</p>}
-              {review.finish && <p className="text-sm"><span className="text-muted-foreground">Finish:</span> {review.finish}</p>}
-              {review.notes && <p className="text-sm"><span className="text-muted-foreground">Notes:</span> {review.notes}</p>}
-              <p className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
+                  ))}
+                  <div className="space-y-1">
+                    <Label>Additional Notes</Label>
+                    <Textarea
+                      value={editNotes.general}
+                      onChange={(e) => setEditNotes((prev) => ({ ...prev, general: e.target.value }))}
+                      placeholder="Other thoughts..."
+                      rows={2}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" disabled={saving} onClick={() => saveEdit(review.id)}>{saving ? "Saving..." : "Save"}</Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingReview(null)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{review.user.name || review.user.email}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{review.rating.toFixed(1)}/10</Badge>
+                      {isAdmin && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => startEditing(review)}>Edit</Button>
+                          <Button variant="outline" size="sm" onClick={() => deleteReview(review.id)}>Delete</Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2 text-xs">
+                    {CATEGORIES.map((cat) => {
+                      const score = review[cat.scoreKey as keyof Review] as number | null;
+                      return score != null ? (
+                        <div key={cat.key} className="text-center">
+                          <p className="text-muted-foreground">{cat.label}</p>
+                          <p className="font-medium">{score}/10</p>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                  {review.appearanceNotes && <p className="text-sm"><span className="text-muted-foreground">Appearance:</span> {review.appearanceNotes}</p>}
+                  {review.nose && <p className="text-sm"><span className="text-muted-foreground">Nose:</span> {review.nose}</p>}
+                  {review.palate && <p className="text-sm"><span className="text-muted-foreground">Taste:</span> {review.palate}</p>}
+                  {review.mouthfeel && <p className="text-sm"><span className="text-muted-foreground">Mouthfeel:</span> {review.mouthfeel}</p>}
+                  {review.finish && <p className="text-sm"><span className="text-muted-foreground">Finish:</span> {review.finish}</p>}
+                  {review.notes && <p className="text-sm"><span className="text-muted-foreground">Notes:</span> {review.notes}</p>}
+                  <p className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
+                </>
+              )}
             </div>
           ))}
           {bourbon.reviews.length === 0 && !showForm && <p className="text-muted-foreground">No reviews yet.</p>}
