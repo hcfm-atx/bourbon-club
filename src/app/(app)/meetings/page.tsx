@@ -13,9 +13,9 @@ interface Meeting {
   bourbons: { bourbon: { name: string } }[];
 }
 
-function getUTCDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+function getDateKey(dateStr: string) {
+  // Extract YYYY-MM-DD directly from ISO string to avoid timezone issues
+  return dateStr.split("T")[0];
 }
 
 export default function MeetingsPage() {
@@ -25,8 +25,9 @@ export default function MeetingsPage() {
     fetch("/api/meetings").then((r) => r.json()).then(setMeetings);
   }, []);
 
-  const upcoming = meetings.filter((m) => new Date(m.date) >= new Date());
-  const past = meetings.filter((m) => new Date(m.date) < new Date());
+  const nowKey = new Date().toISOString().split("T")[0];
+  const upcoming = meetings.filter((m) => m.date.split("T")[0] >= nowKey);
+  const past = meetings.filter((m) => m.date.split("T")[0] < nowKey);
 
   return (
     <div className="space-y-6">
@@ -77,14 +78,12 @@ function MeetingCalendar({ meetings }: { meetings: Meeting[] }) {
   // Map meetings by date key (YYYY-MM-DD)
   const meetingsByDate: Record<string, Meeting[]> = {};
   for (const m of meetings) {
-    const d = getUTCDate(m.date);
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    const key = getDateKey(m.date);
     if (!meetingsByDate[key]) meetingsByDate[key] = [];
     meetingsByDate[key].push(m);
   }
 
-  const today = new Date();
-  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const todayKey = new Date().toISOString().split("T")[0];
 
   const monthLabel = firstDay.toLocaleDateString("en-US", { timeZone: "UTC", month: "long", year: "numeric" });
 
