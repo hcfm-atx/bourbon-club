@@ -36,7 +36,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="relative rounded-xl overflow-hidden h-48 md:h-64">
         <Image
-          src="/20240520_193741.jpeg"
+          src="/glen_hero.jpeg"
           alt="Bourbon tasting"
           fill
           className="object-cover"
