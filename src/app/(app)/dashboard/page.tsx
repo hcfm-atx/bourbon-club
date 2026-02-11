@@ -34,7 +34,21 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Welcome, {session?.user?.name || "Member"}</h1>
+      <div className="relative rounded-xl overflow-hidden h-48 md:h-64">
+        <Image
+          src="/20240520_193741.jpeg"
+          alt="Bourbon tasting"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/20 flex items-end p-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Welcome, {session?.user?.name || "Member"}</h1>
+            <p className="text-white/70 text-sm mt-1">Your bourbon club at a glance</p>
+          </div>
+        </div>
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
         <Link href="/meetings">
           <Card className="hover:shadow-md transition-shadow">
