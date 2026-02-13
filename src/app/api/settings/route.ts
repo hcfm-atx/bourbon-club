@@ -24,7 +24,8 @@ export async function PUT(req: NextRequest) {
   const clubId = await getClubId(session.user.id, session.user.currentClubId);
   if (!clubId) return NextResponse.json({ error: "No active club" }, { status: 400 });
 
-  const data = await req.json();
+  const { clubName, venmoHandle, paypalEmail, reminderDaysBefore } = await req.json();
+  const data = { clubName, venmoHandle, paypalEmail, reminderDaysBefore };
   const settings = await prisma.appSettings.upsert({
     where: { clubId },
     update: data,

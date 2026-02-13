@@ -2,26 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isClubAdmin } from "@/lib/session";
+import { isClubAdmin, getClubId } from "@/lib/session";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({}, { status: 401 });
 
+  const clubId = await getClubId(session.user.id, session.user.currentClubId);
   const { id } = await params;
   const poll = await prisma.poll.findUnique({
     where: { id },
     include: {
       options: {
         include: {
-          votes: { include: { user: { select: { id: true, name: true, email: true } } } },
+          votes: { include: { user: { select: { id: true, name: true } } } },
           bourbon: { select: { id: true, name: true, distillery: true, proof: true, type: true, imageUrl: true } },
         },
         orderBy: { date: "asc" },
       },
     },
   });
-  if (!poll) return NextResponse.json({}, { status: 404 });
+  if (!poll || poll.clubId !== clubId) return NextResponse.json({}, { status: 404 });
   return NextResponse.json(poll);
 }
 
@@ -31,7 +32,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({}, { status: 403 });
   }
 
+  const clubId = await getClubId(session.user.id, session.user.currentClubId);
   const { id } = await params;
+  const poll = await prisma.poll.findUnique({ where: { id } });
+  if (!poll || poll.clubId !== clubId) return NextResponse.json({}, { status: 404 });
+
   await prisma.poll.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
   const clubId = await getClubId(session.user.id, session.user.currentClubId);
   if (!clubId) return NextResponse.json({ error: "No active club" }, { status: 400 });
 
-  const data = await req.json();
-  const bourbon = await prisma.bourbon.create({ data: { ...data, clubId, createdById: session.user.id } });
+  const { name, distillery, proof, cost, type, region, age, imageUrl } = await req.json();
+  const bourbon = await prisma.bourbon.create({
+    data: { name, distillery, proof, cost, type, region, age, imageUrl, clubId, createdById: session.user.id },
+  });
   return NextResponse.json(bourbon);
 }

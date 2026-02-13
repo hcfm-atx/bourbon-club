@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isClubAdmin } from "@/lib/session";
+import { isClubAdmin, getClubId } from "@/lib/session";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({}, { status: 401 });
 
+  const clubId = await getClubId(session.user.id, session.user.currentClubId);
   const { id } = await params;
-  const review = await prisma.review.findUnique({ where: { id } });
-  if (!review) return NextResponse.json({}, { status: 404 });
+  const review = await prisma.review.findUnique({
+    where: { id },
+    include: { bourbon: { select: { clubId: true } } },
+  });
+  if (!review || review.bourbon.clubId !== clubId) return NextResponse.json({}, { status: 404 });
 
   const isOwner = review.userId === session.user.id;
   if (!isOwner && !isClubAdmin(session)) {
@@ -51,9 +55,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({}, { status: 401 });
 
+  const clubId = await getClubId(session.user.id, session.user.currentClubId);
   const { id } = await params;
-  const review = await prisma.review.findUnique({ where: { id } });
-  if (!review) return NextResponse.json({}, { status: 404 });
+  const review = await prisma.review.findUnique({
+    where: { id },
+    include: { bourbon: { select: { clubId: true } } },
+  });
+  if (!review || review.bourbon.clubId !== clubId) return NextResponse.json({}, { status: 404 });
 
   const isOwner = review.userId === session.user.id;
   if (!isOwner && !isClubAdmin(session)) {

@@ -8,6 +8,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
   const { id } = await params;
+
+  // Verify user is a member of this club (or SUPER_ADMIN)
+  if (session.user.systemRole !== "SUPER_ADMIN") {
+    const membership = await prisma.clubMember.findUnique({
+      where: { userId_clubId: { userId: session.user.id, clubId: id } },
+    });
+    if (!membership) return NextResponse.json({}, { status: 404 });
+  }
+
   const club = await prisma.club.findUnique({
     where: { id },
     include: {

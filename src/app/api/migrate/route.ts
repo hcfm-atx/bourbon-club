@@ -4,12 +4,15 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  // Only allow super admin or use a secret
   const session = await getServerSession(authOptions);
   const secret = req.headers.get("x-migrate-secret");
 
-  if (!session?.user?.id && secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({}, { status: 401 });
+  // Require SUPER_ADMIN session or valid cron secret
+  const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
+  const hasValidSecret = secret && secret === process.env.CRON_SECRET;
+
+  if (!isSuperAdmin && !hasValidSecret) {
+    return NextResponse.json({}, { status: 403 });
   }
 
   const log: string[] = [];
@@ -54,7 +57,6 @@ export async function POST(req: NextRequest) {
   log.push(`Updated ${expenseResult} expenses`);
 
   // 3. Create ClubMember entries for existing users
-  // Read old role from User table if the column still exists
   let oldRoles: Record<string, string> = {};
   try {
     const rows = await prisma.$queryRaw<Array<{ id: string; role: string }>>`
@@ -104,29 +106,6 @@ export async function POST(req: NextRequest) {
     }
   }
   log.push(`Created ${membersCreated} club memberships`);
-
-  // Also promote the currently logged-in user to SUPER_ADMIN if they aren't already
-  if (session?.user?.id) {
-    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } });
-    if (currentUser && currentUser.systemRole === "USER") {
-      await prisma.user.update({
-        where: { id: currentUser.id },
-        data: { systemRole: "SUPER_ADMIN" },
-      });
-      log.push(`Promoted current user ${currentUser.email} to SUPER_ADMIN`);
-    }
-    // Also make them club ADMIN
-    const membership = await prisma.clubMember.findUnique({
-      where: { userId_clubId: { userId: session.user.id, clubId: club.id } },
-    });
-    if (membership && membership.role !== "ADMIN") {
-      await prisma.clubMember.update({
-        where: { id: membership.id },
-        data: { role: "ADMIN" },
-      });
-      log.push(`Made current user club ADMIN`);
-    }
-  }
 
   // 4. Migrate AppSettings
   const clubSettings = await prisma.appSettings.findUnique({ where: { clubId: club.id } });

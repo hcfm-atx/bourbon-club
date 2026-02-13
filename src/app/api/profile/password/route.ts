@@ -19,6 +19,13 @@ export async function PUT(req: NextRequest) {
     );
   }
 
+  if (newPassword.length > 72) {
+    return NextResponse.json(
+      { error: "Password must be 72 characters or fewer" },
+      { status: 400 }
+    );
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { passwordHash: true },

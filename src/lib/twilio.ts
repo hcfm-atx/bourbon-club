@@ -7,7 +7,9 @@ const client = twilio(
 
 export async function sendSMS(to: string, body: string) {
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_PHONE_NUMBER) {
-    console.log(`[SMS Skipped] To: ${to}, Body: ${body}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[SMS Skipped] Twilio not configured");
+    }
     return;
   }
 

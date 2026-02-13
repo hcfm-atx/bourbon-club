@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isClubAdmin } from "@/lib/session";
+import { isClubAdmin, getClubId } from "@/lib/session";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -10,7 +10,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({}, { status: 403 });
   }
 
+  const clubId = await getClubId(session.user.id, session.user.currentClubId);
   const { id } = await params;
+
+  const poll = await prisma.poll.findUnique({ where: { id } });
+  if (!poll || poll.clubId !== clubId) return NextResponse.json({}, { status: 404 });
+
   const { selectedOptionId, createMeeting } = await req.json();
 
   // Mark the selected option
@@ -28,13 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Optionally create a meeting from the selected option
   if (createMeeting) {
     const option = await prisma.pollOption.findUnique({ where: { id: selectedOptionId } });
-    const poll = await prisma.poll.findUnique({
-      where: { id },
-      include: { options: { where: { selected: true } } },
-    });
-    if (option && poll) {
+    if (option) {
       if (poll.type === "BOURBON") {
-        // For bourbon polls: create meeting at current date, attach selected bourbon(s)
         const selectedOptions = await prisma.pollOption.findMany({
           where: { pollId: id, selected: true },
         });
@@ -52,7 +52,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           },
         });
       } else {
-        // DATE poll: use the selected date
         await prisma.meeting.create({
           data: {
             clubId: poll.clubId,
