@@ -16,6 +16,12 @@ export default function ProfilePage() {
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [hasPassword, setHasPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
@@ -23,6 +29,7 @@ export default function ProfilePage() {
         setName(data.name || "");
         setPhone(data.phone || "");
         setSmsOptIn(data.smsOptIn || false);
+        setHasPassword(data.hasPassword || false);
       });
   }, []);
 
@@ -41,6 +48,38 @@ export default function ProfilePage() {
       toast.error("Failed to update profile");
     }
     setSaving(false);
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    setSavingPassword(true);
+    const res = await fetch("/api/profile/password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword: hasPassword ? currentPassword : undefined,
+        newPassword,
+      }),
+    });
+    if (res.ok) {
+      toast.success(hasPassword ? "Password changed" : "Password set successfully");
+      setHasPassword(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to update password");
+    }
+    setSavingPassword(false);
   };
 
   return (
@@ -84,6 +123,58 @@ export default function ProfilePage() {
             </div>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>{hasPassword ? "Change Password" : "Set Password"}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            {hasPassword
+              ? "Update your password for email + password sign-in."
+              : "Set a password to enable email + password sign-in. You can always use a magic link instead."}
+          </p>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            {hasPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+            <Button type="submit" disabled={savingPassword}>
+              {savingPassword ? "Saving..." : hasPassword ? "Change Password" : "Set Password"}
             </Button>
           </form>
         </CardContent>

@@ -9,9 +9,14 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, phone: true, smsOptIn: true },
+    select: { name: true, phone: true, smsOptIn: true, passwordHash: true },
   });
-  return NextResponse.json(user);
+  return NextResponse.json({
+    name: user?.name,
+    phone: user?.phone,
+    smsOptIn: user?.smsOptIn,
+    hasPassword: !!user?.passwordHash,
+  });
 }
 
 export async function PUT(req: NextRequest) {
