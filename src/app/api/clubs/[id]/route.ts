@@ -47,10 +47,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   }
 
-  const { name, description } = await req.json();
+  const { name, description, isPublic } = await req.json();
+  const data: Record<string, unknown> = { name, description: description || null };
+  if (typeof isPublic === "boolean") data.isPublic = isPublic;
   const club = await prisma.club.update({
     where: { id },
-    data: { name, description: description || null },
+    data,
   });
   return NextResponse.json(club);
 }

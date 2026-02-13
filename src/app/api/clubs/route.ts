@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  const { name, description } = await req.json();
+  const { name, description, isPublic } = await req.json();
   const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       name,
       slug,
       description: description || null,
+      isPublic: isPublic || false,
       settings: { create: { clubName: name } },
     },
   });

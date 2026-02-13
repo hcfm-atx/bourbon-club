@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -11,6 +12,8 @@ interface Club {
   id: string;
   name: string;
   description: string | null;
+  isPublic: boolean;
+  invited: boolean;
   _count: { members: number };
 }
 
@@ -88,7 +91,10 @@ export default function OnboardingPage() {
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{club.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base">{club.name}</CardTitle>
+                        {club.invited && <Badge variant="secondary">Invited</Badge>}
+                      </div>
                       {selectedClubIds.has(club.id) && (
                         <span className="text-primary text-lg">&#10003;</span>
                       )}

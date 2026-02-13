@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface ClubMember {
@@ -27,6 +28,7 @@ interface Club {
   name: string;
   slug: string;
   description: string | null;
+  isPublic: boolean;
   members: ClubMember[];
   invites: ClubInvite[];
   _count: { bourbons: number; meetings: number };
@@ -38,6 +40,7 @@ export default function AdminClubDetailPage() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState<"MEMBER" | "ADMIN">("MEMBER");
@@ -48,6 +51,7 @@ export default function AdminClubDetailPage() {
       setClub(data);
       setName(data.name);
       setDescription(data.description || "");
+      setIsPublic(data.isPublic || false);
     });
   };
 
@@ -61,7 +65,7 @@ export default function AdminClubDetailPage() {
     const res = await fetch(`/api/clubs/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description: description || null }),
+      body: JSON.stringify({ name, description: description || null, isPublic }),
     });
     if (res.ok) {
       toast.success("Club updated");
@@ -128,7 +132,12 @@ export default function AdminClubDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{club.name}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">{club.name}</h1>
+          <Badge variant={club.isPublic ? "default" : "secondary"}>
+            {club.isPublic ? "Public" : "Private"}
+          </Badge>
+        </div>
         <Button variant="outline" onClick={() => setEditing(!editing)}>
           {editing ? "Cancel" : "Edit"}
         </Button>
@@ -145,6 +154,10 @@ export default function AdminClubDetailPage() {
               <div className="space-y-1">
                 <Label>Description</Label>
                 <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="isPublic" checked={isPublic} onCheckedChange={(checked) => setIsPublic(checked === true)} />
+                <Label htmlFor="isPublic">Public club (anyone can join)</Label>
               </div>
               <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
             </form>

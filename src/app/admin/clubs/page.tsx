@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface Club {
@@ -15,6 +17,7 @@ interface Club {
   name: string;
   slug: string;
   description: string | null;
+  isPublic: boolean;
   _count: { members: number };
 }
 
@@ -25,6 +28,7 @@ export default function AdminClubsPage() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
@@ -45,12 +49,13 @@ export default function AdminClubsPage() {
     const res = await fetch("/api/clubs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description: description || null }),
+      body: JSON.stringify({ name, description: description || null, isPublic }),
     });
     if (res.ok) {
       toast.success("Club created");
       setName("");
       setDescription("");
+      setIsPublic(false);
       setShowForm(false);
       loadClubs();
     } else {
@@ -92,6 +97,10 @@ export default function AdminClubsPage() {
                 <Label>Description (optional)</Label>
                 <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
               </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="isPublic" checked={isPublic} onCheckedChange={(checked) => setIsPublic(checked === true)} />
+                <Label htmlFor="isPublic">Public club (anyone can join)</Label>
+              </div>
               <Button type="submit" disabled={saving}>{saving ? "Creating..." : "Create Club"}</Button>
             </form>
           </CardContent>
@@ -103,7 +112,12 @@ export default function AdminClubsPage() {
           <Card key={club.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
             <CardHeader className="flex flex-row items-start justify-between space-y-0">
               <div onClick={() => router.push(`/admin/clubs/${club.id}`)} className="flex-1">
-                <CardTitle className="text-lg">{club.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">{club.name}</CardTitle>
+                  <Badge variant={club.isPublic ? "default" : "secondary"}>
+                    {club.isPublic ? "Public" : "Private"}
+                  </Badge>
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   {club._count.members} member{club._count.members !== 1 ? "s" : ""}
                 </p>

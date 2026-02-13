@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     firstClubId = club.id;
   }
 
-  // Join existing clubs — only if user has a pending invite
+  // Join existing clubs — allow if public or user has a pending invite
   if (joinClubIds?.length > 0) {
     const invites = await prisma.clubInvite.findMany({
       where: { email: session.user.email! },
@@ -51,7 +51,14 @@ export async function POST(req: NextRequest) {
     const invitedClubIds = new Set(invites.map((i) => i.clubId));
 
     for (const clubId of joinClubIds) {
-      if (!invitedClubIds.has(clubId)) continue;
+      const club = await prisma.club.findUnique({
+        where: { id: clubId },
+        select: { isPublic: true },
+      });
+      if (!club) continue;
+
+      // Must be public or invited
+      if (!club.isPublic && !invitedClubIds.has(clubId)) continue;
 
       const alreadyMember = await prisma.clubMember.findUnique({
         where: { userId_clubId: { userId: session.user.id, clubId } },
