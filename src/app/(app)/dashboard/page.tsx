@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, Vote, Star, Wallet, CreditCard } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { ActivityFeed } from "@/components/activity-feed";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -42,7 +43,7 @@ export default async function DashboardPage() {
         bourbon: { select: { name: true } },
       },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 10,
     }),
     prisma.poll.findMany({
       where: { clubId: clubId ?? undefined },
@@ -53,7 +54,7 @@ export default async function DashboardPage() {
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
-      take: 3,
+      take: 10,
     }),
     prisma.payment.findMany({
       where: { paid: true, duesPeriod: { clubId: clubId ?? undefined } },
@@ -65,7 +66,7 @@ export default async function DashboardPage() {
         duesPeriod: { select: { amount: true } },
       },
       orderBy: { paidAt: "desc" },
-      take: 3,
+      take: 10,
     }),
   ]);
 
@@ -104,20 +105,7 @@ export default async function DashboardPage() {
 
   const sortedActivity = activityEvents
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 8);
-
-  // Helper function to format relative time
-  const getRelativeTime = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "today";
-    if (diffDays === 1) return "yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
+    .slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -200,39 +188,7 @@ export default async function DashboardPage() {
       </div>
 
       {sortedActivity.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xl font-bold">Recent Activity</h2>
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {sortedActivity.map((event, index) => {
-                  const isLast = index === sortedActivity.length - 1;
-                  const iconColor = event.type === "review" ? "bg-amber-500" : event.type === "poll" ? "bg-blue-500" : "bg-green-500";
-                  const Icon = event.type === "review" ? Star : event.type === "poll" ? Vote : CreditCard;
-
-                  return (
-                    <div key={event.id} className="flex gap-3">
-                      <div className="relative flex flex-col items-center">
-                        <div className={`${iconColor} rounded-full p-2 flex items-center justify-center`}>
-                          <Icon className="w-4 h-4 text-white" />
-                        </div>
-                        {!isLast && (
-                          <div className="w-px h-full bg-border mt-2" />
-                        )}
-                      </div>
-                      <div className="flex-1 pb-4">
-                        <p className="text-sm font-medium">{event.description}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {getRelativeTime(event.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <ActivityFeed events={sortedActivity.map((e) => ({ ...e, createdAt: e.createdAt.toISOString() }))} />
       )}
 
       {bourbonsWithImages.length > 0 && (
