@@ -333,6 +333,11 @@ export default function DiscoverPage() {
                       </div>
                     </Link>
                   ))}
+                  <div className="text-center pt-4">
+                    <Link href="/bourbons">
+                      <Button variant="outline">Browse All Bourbons &rarr;</Button>
+                    </Link>
+                  </div>
                 </div>
               )}
             </CardContent>
