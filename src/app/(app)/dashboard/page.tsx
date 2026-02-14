@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getClubId } from "@/lib/session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,20 +9,24 @@ import Link from "next/link";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
+  const clubId = session?.user?.id
+    ? await getClubId(session.user.id, session.user.currentClubId)
+    : null;
+
   const [nextMeeting, openPolls, reviewCount, paidPayments, allExpenses, bourbonsWithImages] = await Promise.all([
     prisma.meeting.findFirst({
-      where: { date: { gte: new Date() } },
+      where: { clubId: clubId ?? undefined, date: { gte: new Date() } },
       orderBy: { date: "asc" },
     }),
-    prisma.poll.count({ where: { status: "OPEN" } }),
-    prisma.review.count({ where: { userId: session?.user?.id } }),
+    prisma.poll.count({ where: { clubId: clubId ?? undefined, status: "OPEN" } }),
+    prisma.review.count({ where: { userId: session?.user?.id, bourbon: { clubId: clubId ?? undefined } } }),
     prisma.payment.findMany({
-      where: { paid: true },
+      where: { paid: true, duesPeriod: { clubId: clubId ?? undefined } },
       include: { duesPeriod: { select: { amount: true } } },
     }),
-    prisma.expense.aggregate({ _sum: { amount: true } }),
+    prisma.expense.aggregate({ where: { clubId: clubId ?? undefined }, _sum: { amount: true } }),
     prisma.bourbon.findMany({
-      where: { imageUrl: { not: null } },
+      where: { clubId: clubId ?? undefined, imageUrl: { not: null } },
       select: { id: true, name: true, imageUrl: true, distillery: true },
       orderBy: { createdAt: "desc" },
       take: 6,
