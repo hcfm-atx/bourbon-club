@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { ChevronLeft, Star } from "lucide-react";
+import { ChevronLeft, Star, Eye, Wind, UtensilsCrossed, Droplets, Timer } from "lucide-react";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
@@ -55,11 +55,11 @@ interface Bourbon {
 }
 
 const CATEGORIES = [
-  { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs" },
-  { key: "nose", scoreKey: "noseScore", notesKey: "nose", label: "Nose", desc: "Vanilla, caramel, fruit, wood, spice" },
-  { key: "taste", scoreKey: "tasteScore", notesKey: "palate", label: "Taste", desc: "Sweetness, oak, spice, complexity" },
-  { key: "mouthfeel", scoreKey: "mouthfeelScore", notesKey: "mouthfeel", label: "Mouthfeel", desc: "Thin, creamy, oily, hot" },
-  { key: "finish", scoreKey: "finishScore", notesKey: "finish", label: "Finish", desc: "Length, dryness, smoothness" },
+  { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs", icon: Eye, placeholder: "e.g., Deep mahogany with ruby highlights", borderColor: "border-l-amber-300" },
+  { key: "nose", scoreKey: "noseScore", notesKey: "nose", label: "Nose", desc: "Vanilla, caramel, fruit, wood, spice", icon: Wind, placeholder: "e.g., Caramel, vanilla, toasted oak", borderColor: "border-l-amber-400" },
+  { key: "taste", scoreKey: "tasteScore", notesKey: "palate", label: "Taste", desc: "Sweetness, oak, spice, complexity", icon: UtensilsCrossed, placeholder: "e.g., Rich butterscotch, baking spices, dried fruit", borderColor: "border-l-amber-500" },
+  { key: "mouthfeel", scoreKey: "mouthfeelScore", notesKey: "mouthfeel", label: "Mouthfeel", desc: "Thin, creamy, oily, hot", icon: Droplets, placeholder: "e.g., Smooth and creamy with a light warmth", borderColor: "border-l-amber-600" },
+  { key: "finish", scoreKey: "finishScore", notesKey: "finish", label: "Finish", desc: "Length, dryness, smoothness", icon: Timer, placeholder: "e.g., Long and warm with lingering spice", borderColor: "border-l-amber-700" },
 ] as const;
 
 export default function BourbonDetailPage() {
@@ -316,26 +316,36 @@ export default function BourbonDetailPage() {
         <CardContent className="space-y-3">
           {showForm && (
             <form onSubmit={submitReview} className="space-y-4 border rounded-md p-4">
-              <p className="text-sm text-muted-foreground">Overall: <span className="font-bold text-foreground">{overallScore.toFixed(1)}/10</span></p>
-              {CATEGORIES.map((cat) => (
-                <div key={cat.key} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>{cat.label}: {scores[cat.key as keyof typeof scores]}/10</Label>
-                    <span className="text-xs text-muted-foreground">{cat.desc}</span>
+              <div className="text-center pb-4 border-b">
+                <p className="text-sm text-muted-foreground mb-2">Overall Score</p>
+                <p className="text-5xl font-bold text-foreground">{overallScore.toFixed(1)}</p>
+                <p className="text-sm text-muted-foreground mt-1">/10</p>
+              </div>
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <div key={cat.key} className={`space-y-2 border-l-4 ${cat.borderColor} pl-4`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-muted-foreground" />
+                        <Label>{cat.label}: {scores[cat.key as keyof typeof scores]}/10</Label>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{cat.desc}</span>
+                    </div>
+                    <Slider
+                      min={0} max={10} step={1}
+                      value={[scores[cat.key as keyof typeof scores]]}
+                      onValueChange={([v]) => setScores((prev) => ({ ...prev, [cat.key]: v }))}
+                    />
+                    <Textarea
+                      value={textNotes[cat.key as keyof typeof textNotes]}
+                      onChange={(e) => setTextNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
+                      placeholder={cat.placeholder}
+                      rows={2}
+                    />
                   </div>
-                  <Slider
-                    min={0} max={10} step={1}
-                    value={[scores[cat.key as keyof typeof scores]]}
-                    onValueChange={([v]) => setScores((prev) => ({ ...prev, [cat.key]: v }))}
-                  />
-                  <Textarea
-                    value={textNotes[cat.key as keyof typeof textNotes]}
-                    onChange={(e) => setTextNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
-                    placeholder={`${cat.label} notes (optional)...`}
-                    rows={1}
-                  />
-                </div>
-              ))}
+                );
+              })}
               <div className="space-y-1">
                 <Label>Additional Notes</Label>
                 <Textarea
@@ -356,25 +366,35 @@ export default function BourbonDetailPage() {
               {editingReview === review.id ? (
                 <div className="space-y-4">
                   <p className="text-sm font-medium">Editing review by {review.user.name || review.user.email}</p>
-                  <p className="text-sm text-muted-foreground">Overall: <span className="font-bold text-foreground">{(Object.values(editScores).reduce((a, b) => a + b, 0) / 5).toFixed(1)}/10</span></p>
-                  {CATEGORIES.map((cat) => (
-                    <div key={cat.key} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label>{cat.label}: {editScores[cat.key as keyof typeof editScores]}/10</Label>
+                  <div className="text-center pb-4 border-b">
+                    <p className="text-sm text-muted-foreground mb-2">Overall Score</p>
+                    <p className="text-5xl font-bold text-foreground">{(Object.values(editScores).reduce((a, b) => a + b, 0) / 5).toFixed(1)}</p>
+                    <p className="text-sm text-muted-foreground mt-1">/10</p>
+                  </div>
+                  {CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <div key={cat.key} className={`space-y-2 border-l-4 ${cat.borderColor} pl-4`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon className="w-4 h-4 text-muted-foreground" />
+                            <Label>{cat.label}: {editScores[cat.key as keyof typeof editScores]}/10</Label>
+                          </div>
+                        </div>
+                        <Slider
+                          min={0} max={10} step={1}
+                          value={[editScores[cat.key as keyof typeof editScores]]}
+                          onValueChange={([v]) => setEditScores((prev) => ({ ...prev, [cat.key]: v }))}
+                        />
+                        <Textarea
+                          value={editNotes[cat.key as keyof typeof editNotes]}
+                          onChange={(e) => setEditNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
+                          placeholder={cat.placeholder}
+                          rows={2}
+                        />
                       </div>
-                      <Slider
-                        min={0} max={10} step={1}
-                        value={[editScores[cat.key as keyof typeof editScores]]}
-                        onValueChange={([v]) => setEditScores((prev) => ({ ...prev, [cat.key]: v }))}
-                      />
-                      <Textarea
-                        value={editNotes[cat.key as keyof typeof editNotes]}
-                        onChange={(e) => setEditNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
-                        placeholder={`${cat.label} notes...`}
-                        rows={1}
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div className="space-y-1">
                     <Label>Additional Notes</Label>
                     <Textarea

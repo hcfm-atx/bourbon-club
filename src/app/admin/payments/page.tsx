@@ -115,7 +115,7 @@ export default function AdminPaymentsPage() {
                 <div className="text-right">
                   <p className="text-2xl font-bold">{paidCount}/{totalCount}</p>
                   <p className="text-xs text-muted-foreground">paid</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => deletePeriod(currentPeriod.id)}>Delete</Button>
+                  <Button variant="destructive" size="sm" className="mt-2" onClick={() => deletePeriod(currentPeriod.id)}>Delete</Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -129,7 +129,7 @@ export default function AdminPaymentsPage() {
                   </TableHeader>
                   <TableBody>
                     {currentPeriod.payments.map((payment) => (
-                      <TableRow key={payment.id}>
+                      <TableRow key={payment.id} className="hover:bg-muted/50 transition-colors">
                         <TableCell>{payment.user.name || payment.user.email}</TableCell>
                         <TableCell>
                           <Badge variant={payment.paid ? "default" : "secondary"}>

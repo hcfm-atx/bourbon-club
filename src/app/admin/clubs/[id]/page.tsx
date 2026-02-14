@@ -304,7 +304,7 @@ export default function AdminClubDetailPage() {
                 <div className="flex items-center gap-2">
                   <Badge
                     variant={member.role === "ADMIN" ? "default" : "secondary"}
-                    className="cursor-pointer"
+                    className={`cursor-pointer ${member.role === "ADMIN" ? "bg-amber-600 text-white" : ""}`}
                     onClick={() => toggleRole(member.user.id, member.role)}
                   >
                     {member.role}

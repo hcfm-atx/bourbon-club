@@ -9,6 +9,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
+function Avatar({ name }: { name: string | null }) {
+  const initial = name?.charAt(0).toUpperCase() || "?";
+  const colors = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-purple-500",
+    "bg-pink-500",
+    "bg-indigo-500",
+    "bg-orange-500",
+  ];
+  const colorIndex = name ? name.charCodeAt(0) % colors.length : 0;
+  const bgColor = colors[colorIndex];
+
+  return (
+    <div className={`h-8 w-8 rounded-full ${bgColor} flex items-center justify-center text-white text-sm font-medium`}>
+      {initial}
+    </div>
+  );
+}
+
 interface Member {
   id: string;
   email: string;
@@ -85,12 +105,12 @@ export default function AdminMembersPage() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Members</h1>
 
-      <Card>
+      <Card className="bg-muted/20">
         <CardHeader>
           <CardTitle>Invite Member</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={inviteMember} className="flex gap-2 flex-wrap">
+          <form onSubmit={inviteMember} className="flex gap-3 flex-wrap">
             <Input
               type="email"
               value={inviteEmail}
@@ -128,13 +148,18 @@ export default function AdminMembersPage() {
             </TableHeader>
             <TableBody>
               {members.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>{member.name || "\u2014"}</TableCell>
+                <TableRow key={member.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={member.name} />
+                      <span>{member.name || "\u2014"}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>{member.phone || "\u2014"}</TableCell>
                   <TableCell>{member.smsOptIn ? "Yes" : "No"}</TableCell>
                   <TableCell>
-                    <Badge variant={member.role === "ADMIN" ? "default" : "secondary"}>
+                    <Badge className={member.role === "ADMIN" ? "bg-amber-600 text-white" : ""} variant={member.role === "ADMIN" ? "default" : "secondary"}>
                       {member.role}
                     </Badge>
                   </TableCell>
@@ -142,7 +167,7 @@ export default function AdminMembersPage() {
                     <Button variant="outline" size="sm" onClick={() => toggleRole(member.id, member.role)}>
                       {member.role === "ADMIN" ? "Make Member" : "Make Admin"}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => removeMember(member.id)}>
+                    <Button variant="destructive" size="sm" onClick={() => removeMember(member.id)}>
                       Remove
                     </Button>
                   </TableCell>

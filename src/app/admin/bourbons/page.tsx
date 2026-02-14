@@ -82,7 +82,7 @@ export default function AdminBourbonsPage() {
                 <Link href={`/admin/bourbons/${bourbon.id}`}>
                   <Button variant="outline" size="sm">Edit</Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={() => deleteBourbon(bourbon.id)}>Delete</Button>
+                <Button variant="destructive" size="sm" onClick={() => deleteBourbon(bourbon.id)}>Delete</Button>
               </div>
             </CardContent>
           </Card>

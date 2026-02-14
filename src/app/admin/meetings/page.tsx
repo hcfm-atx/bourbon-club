@@ -66,7 +66,7 @@ export default function AdminMeetingsPage() {
                 <Link href={`/admin/meetings/${meeting.id}`}>
                   <Button variant="outline" size="sm">Edit</Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={() => deleteMeeting(meeting.id)}>Delete</Button>
+                <Button variant="destructive" size="sm" onClick={() => deleteMeeting(meeting.id)}>Delete</Button>
               </div>
             </CardContent>
           </Card>

@@ -8,14 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Eye, Wind, UtensilsCrossed, Droplets, Timer } from "lucide-react";
 
 const CATEGORIES = [
-  { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance" },
-  { key: "nose", scoreKey: "noseScore", notesKey: "nose", label: "Nose" },
-  { key: "taste", scoreKey: "tasteScore", notesKey: "palate", label: "Taste" },
-  { key: "mouthfeel", scoreKey: "mouthfeelScore", notesKey: "mouthfeel", label: "Mouthfeel" },
-  { key: "finish", scoreKey: "finishScore", notesKey: "finish", label: "Finish" },
+  { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", icon: Eye, placeholder: "e.g., Deep mahogany with ruby highlights", borderColor: "border-l-amber-300" },
+  { key: "nose", scoreKey: "noseScore", notesKey: "nose", label: "Nose", icon: Wind, placeholder: "e.g., Caramel, vanilla, toasted oak", borderColor: "border-l-amber-400" },
+  { key: "taste", scoreKey: "tasteScore", notesKey: "palate", label: "Taste", icon: UtensilsCrossed, placeholder: "e.g., Rich butterscotch, baking spices, dried fruit", borderColor: "border-l-amber-500" },
+  { key: "mouthfeel", scoreKey: "mouthfeelScore", notesKey: "mouthfeel", label: "Mouthfeel", icon: Droplets, placeholder: "e.g., Smooth and creamy with a light warmth", borderColor: "border-l-amber-600" },
+  { key: "finish", scoreKey: "finishScore", notesKey: "finish", label: "Finish", icon: Timer, placeholder: "e.g., Long and warm with lingering spice", borderColor: "border-l-amber-700" },
 ] as const;
 
 interface Review {
@@ -255,53 +255,59 @@ export default function LiveTastingPage() {
 
         {/* Scoring Categories */}
         <div className="space-y-4">
-          {CATEGORIES.map((cat) => (
-            <Card key={cat.key}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">{cat.label}</h3>
-                  <Badge variant="outline" className="text-base px-3 py-1">
-                    {scores[cat.key as keyof BourbonScores]}/10
-                  </Badge>
-                </div>
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <Card key={cat.key} className={`border-l-4 ${cat.borderColor}`}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-5 h-5 text-muted-foreground" />
+                      <h3 className="font-semibold">{cat.label}</h3>
+                    </div>
+                    <Badge variant="outline" className="text-base px-3 py-1">
+                      {scores[cat.key as keyof BourbonScores]}/10
+                    </Badge>
+                  </div>
 
-                {/* Number Buttons */}
-                <div className="grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                    <Button
-                      key={num}
-                      variant={scores[cat.key as keyof BourbonScores] === num ? "default" : "outline"}
-                      className="h-14 text-lg font-semibold"
-                      onClick={() => setScores((prev) => ({ ...prev, [cat.key]: num }))}
-                    >
-                      {num}
-                    </Button>
-                  ))}
-                </div>
+                  {/* Number Buttons */}
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <Button
+                        key={num}
+                        variant={scores[cat.key as keyof BourbonScores] === num ? "default" : "outline"}
+                        className="h-14 text-lg font-semibold"
+                        onClick={() => setScores((prev) => ({ ...prev, [cat.key]: num }))}
+                      >
+                        {num}
+                      </Button>
+                    ))}
+                  </div>
 
-                {/* Notes Toggle */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setExpandedCategory(expandedCategory === cat.key ? null : cat.key)}
-                >
-                  {expandedCategory === cat.key ? "Hide" : "Add"} notes
-                </Button>
-
-                {/* Notes Textarea */}
-                {expandedCategory === cat.key && (
-                  <Textarea
-                    value={notes[cat.key as keyof BourbonNotes]}
-                    onChange={(e) => setNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
-                    placeholder={`${cat.label} notes (optional)...`}
-                    rows={3}
+                  {/* Notes Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="w-full"
-                  />
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                    onClick={() => setExpandedCategory(expandedCategory === cat.key ? null : cat.key)}
+                  >
+                    {expandedCategory === cat.key ? "Hide" : "Add"} notes
+                  </Button>
+
+                  {/* Notes Textarea */}
+                  {expandedCategory === cat.key && (
+                    <Textarea
+                      value={notes[cat.key as keyof BourbonNotes]}
+                      onChange={(e) => setNotes((prev) => ({ ...prev, [cat.key]: e.target.value }))}
+                      placeholder={cat.placeholder}
+                      rows={2}
+                      className="w-full"
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
 
           {/* General Notes */}
           <Card>

@@ -64,18 +64,32 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-2xl space-y-8">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1612] via-[#2e2720] to-[#1a1612] -z-10" />
+
+      {/* Subtle overlay pattern */}
+      <div className="absolute inset-0 opacity-5 -z-10"
+           style={{
+             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+           }}
+      />
+
+      <div className="w-full max-w-2xl space-y-8 relative">
         {/* Brand Header */}
         <div className="text-center space-y-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="Bourbon Club" width={100} height={100} className="mx-auto" />
+          <h1
+            className="text-5xl md:text-6xl font-bold text-[#fbbf24] tracking-tight mb-4"
+            style={{ fontFamily: 'var(--font-display), serif' }}
+          >
+            HOOTCH CLUB
+          </h1>
           <div>
-            <h1 className="text-4xl sm:text-5xl font-light tracking-tight leading-none">
-              Welcome to Bourbon Club
-            </h1>
-            <div className="w-16 h-px bg-primary/30 mx-auto my-6" />
-            <p className="text-lg text-muted-foreground font-light">
+            <p className="text-2xl md:text-3xl text-[#fef3c7] font-light tracking-wide mb-4" style={{ fontFamily: 'var(--font-display), serif' }}>
+              Every bottle tells a story. Start yours.
+            </p>
+            <div className="w-16 h-px bg-[#fbbf24]/30 mx-auto my-6" />
+            <p className="text-lg text-[#a8a29e] font-light">
               Track tastings. Compare ratings. Manage your club.
             </p>
           </div>
@@ -83,16 +97,16 @@ export default function OnboardingPage() {
 
         {clubs.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-light tracking-tight">Join a Club</h2>
+            <h2 className="text-xl font-light tracking-tight text-[#f5f0e8]">Join a Club</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {clubs.map((club) => (
                 <Card
                   key={club.id}
                   onClick={() => toggleClub(club.id)}
-                  className={`cursor-pointer transition-all ${
+                  className={`cursor-pointer transition-all border-[#3d342b] bg-[#241f1a]/80 backdrop-blur-sm ${
                     selectedClubIds.has(club.id)
-                      ? "ring-2 ring-primary bg-accent"
-                      : "hover:bg-accent/50"
+                      ? "ring-2 ring-[#d97706] bg-[#2e2720]"
+                      : "hover:bg-[#2e2720]/80 hover:shadow-lg hover:transform hover:scale-[1.02]"
                   }`}
                 >
                   <CardHeader className="pb-2">
@@ -120,19 +134,19 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        <Card>
+        <Card className="border-[#3d342b] bg-[#241f1a]/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-light tracking-tight">
+            <CardTitle className="text-lg font-light tracking-tight text-[#f5f0e8]">
               {clubs.length > 0 ? "Or Create Your Own" : "Create a Club"}
             </CardTitle>
-            <CardDescription>Start a new bourbon club and invite your friends.</CardDescription>
+            <CardDescription className="text-[#a8a29e]">Start a new bourbon club and invite your friends.</CardDescription>
           </CardHeader>
           <CardContent>
             <Input
               placeholder="Club name"
               value={newClubName}
               onChange={(e) => setNewClubName(e.target.value)}
-              className="h-12"
+              className="h-12 bg-[#1a1612] border-[#3d342b] text-[#f5f0e8] placeholder:text-[#78716c] focus:border-[#d97706] focus:ring-[#d97706]"
             />
           </CardContent>
         </Card>
@@ -140,7 +154,7 @@ export default function OnboardingPage() {
         <Button
           onClick={handleComplete}
           disabled={!canSubmit || saving}
-          className="w-full h-12 tracking-widest uppercase text-xs"
+          className="w-full h-12 tracking-widest uppercase text-xs font-semibold bg-[#d97706] hover:bg-[#b45309] text-white shadow-lg transition-all duration-200 hover:shadow-xl"
           size="lg"
         >
           {saving ? "Setting up..." : "Get Started"}

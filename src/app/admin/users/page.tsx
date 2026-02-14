@@ -147,7 +147,7 @@ export default function AdminUsersPage() {
                 const isAdding = addingClub?.userId === user.id;
 
                 return (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                     <TableCell>{user.name || "\u2014"}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>

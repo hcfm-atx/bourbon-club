@@ -63,7 +63,7 @@ export default function AdminPollsPage() {
                 <Link href={`/admin/polls/${poll.id}`}>
                   <Button variant="outline" size="sm">Manage</Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={() => deletePoll(poll.id)}>Delete</Button>
+                <Button variant="destructive" size="sm" onClick={() => deletePoll(poll.id)}>Delete</Button>
               </div>
             </CardContent>
           </Card>

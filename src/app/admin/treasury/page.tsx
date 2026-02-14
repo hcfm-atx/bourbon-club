@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DollarSign, Receipt } from "lucide-react";
 
 interface Expense {
   id: string;
@@ -148,28 +149,28 @@ export default function AdminTreasuryPage() {
 
       {/* Summary cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-l-4 border-l-green-600">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">Collected</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">{treasury ? fmt(treasury.totalCollected) : "—"}</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{treasury ? fmt(treasury.totalCollected) : "—"}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-red-500">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-orange-600">{treasury ? fmt(treasury.totalExpenses) : "—"}</p>
+            <p className="text-3xl font-bold text-red-600 dark:text-red-400">{treasury ? fmt(treasury.totalExpenses) : "—"}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={`border-l-4 ${treasury && treasury.balance >= 0 ? "border-l-green-600" : "border-l-red-500"}`}>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl font-bold ${treasury && treasury.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <p className={`text-3xl font-bold ${treasury && treasury.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
               {treasury ? fmt(treasury.balance) : "—"}
             </p>
           </CardContent>
@@ -197,8 +198,13 @@ export default function AdminTreasuryPage() {
               </TableHeader>
               <TableBody>
                 {expenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+                  <TableRow key={expense.id} className="hover:bg-muted/50 transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                        {new Date(expense.date).toLocaleDateString()}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {expense.description}
                       {expense.notes && (
@@ -206,13 +212,18 @@ export default function AdminTreasuryPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {expense.category && <Badge variant="secondary">{categoryLabel(expense.category)}</Badge>}
+                      {expense.category && <Badge variant="outline">{categoryLabel(expense.category)}</Badge>}
                     </TableCell>
-                    <TableCell className="text-right font-medium">{fmt(expense.amount)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{fmt(expense.amount)}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="outline" size="sm" onClick={() => openEdit(expense)}>Edit</Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(expense.id)}>Delete</Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(expense.id)}>Delete</Button>
                       </div>
                     </TableCell>
                   </TableRow>
