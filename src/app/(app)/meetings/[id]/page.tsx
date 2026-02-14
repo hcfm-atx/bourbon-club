@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Sparkles, Check, HelpCircle, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Check, HelpCircle, X, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { generateMeetingPdf } from "@/lib/meeting-pdf";
 
 const CATEGORIES = [
   { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs" },
@@ -68,6 +69,7 @@ export default function MeetingDetailPage() {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [rsvps, setRsvps] = useState<Rsvp[]>([]);
   const [myRsvp, setMyRsvp] = useState<RsvpStatus | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const loadMeeting = () => {
     fetch(`/api/meetings/${id}`).then((r) => r.json()).then(setMeeting);
@@ -88,6 +90,20 @@ export default function MeetingDetailPage() {
     loadRsvps();
   }, [id]);
 
+  const handleExportPdf = () => {
+    if (!meeting) return;
+    setGeneratingPdf(true);
+    try {
+      generateMeetingPdf(meeting, rsvps);
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
   if (!meeting) return <p>Loading...</p>;
 
   return (
@@ -99,16 +115,25 @@ export default function MeetingDetailPage() {
           {meeting.location && ` — ${meeting.location}`}
         </p>
         {meeting.description && <p className="mt-2">{meeting.description}</p>}
-        {meeting.bourbons.length > 0 && (
+        <div className="flex gap-2 mt-4">
+          {meeting.bourbons.length > 0 && (
+            <Button
+              onClick={() => router.push(`/meetings/${id}/taste`)}
+              variant="default"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Live Tasting Mode
+            </Button>
+          )}
           <Button
-            onClick={() => router.push(`/meetings/${id}/taste`)}
-            className="mt-4"
-            variant="default"
+            onClick={handleExportPdf}
+            variant="outline"
+            disabled={generatingPdf}
           >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Live Tasting Mode
+            <Download className="w-4 h-4 mr-2" />
+            {generatingPdf ? "Generating..." : "Download PDF"}
           </Button>
-        )}
+        </div>
       </div>
 
       <RsvpSection
