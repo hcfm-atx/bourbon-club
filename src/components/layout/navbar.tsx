@@ -6,9 +6,10 @@ import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard, CalendarDays, Vote, GlassWater, Star, CreditCard,
-  Users, Wallet, Settings, Menu,
+  Users, Wallet, Settings, Menu, Moon, Sun,
   type LucideIcon,
 } from "lucide-react";
 
@@ -50,6 +51,10 @@ export function Navbar() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [clubMenuOpen, setClubMenuOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
@@ -137,6 +142,16 @@ export function Navbar() {
           </div>
         </div>
         <div className="hidden md:flex items-center gap-2">
+          {mounted && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              aria-label="Toggle theme"
+            >
+              {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+          )}
           {isAdmin && (
             <Link href={pathname.startsWith("/admin") ? "/dashboard" : "/admin/members"}>
               <Button variant="outline" size="sm">
@@ -209,6 +224,15 @@ export function Navbar() {
               <Link href="/profile" onClick={() => setOpen(false)} className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground">
                 Profile
               </Link>
+              {mounted && (
+                <button
+                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                  className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground text-left flex items-center gap-2"
+                >
+                  {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
+                </button>
+              )}
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground text-left"
