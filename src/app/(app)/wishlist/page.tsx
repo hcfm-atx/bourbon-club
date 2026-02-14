@@ -71,8 +71,12 @@ export default function WishlistPage() {
         setShowForm(false);
         fetchSuggestions();
       } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to add suggestion");
+        try {
+          const error = await res.json();
+          toast.error(error.error || "Failed to add suggestion");
+        } catch {
+          toast.error(`Failed to add suggestion (${res.status})`);
+        }
       }
     } catch (error) {
       toast.error("Failed to add suggestion");

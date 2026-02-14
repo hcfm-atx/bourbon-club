@@ -11,30 +11,34 @@ export async function GET(req: NextRequest) {
   const clubId = await getClubId(session.user.id, session.user.currentClubId);
   if (!clubId) return NextResponse.json({ error: "No club selected" }, { status: 400 });
 
-  const suggestions = await prisma.bourbonSuggestion.findMany({
-    where: { clubId },
-    include: {
-      user: { select: { name: true, email: true } },
-      votes: { select: { userId: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    const suggestions = await prisma.bourbonSuggestion.findMany({
+      where: { clubId },
+      include: {
+        user: { select: { name: true, email: true } },
+        votes: { select: { userId: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-  const enriched = suggestions.map((s) => ({
-    id: s.id,
-    name: s.name,
-    distillery: s.distillery,
-    notes: s.notes,
-    createdAt: s.createdAt,
-    suggestedBy: s.user.name || s.user.email,
-    voteCount: s.votes.length,
-    userVoted: s.votes.some((v) => v.userId === session.user.id),
-  }));
+    const enriched = suggestions.map((s) => ({
+      id: s.id,
+      name: s.name,
+      distillery: s.distillery,
+      notes: s.notes,
+      createdAt: s.createdAt,
+      suggestedBy: s.user.name || s.user.email,
+      voteCount: s.votes.length,
+      userVoted: s.votes.some((v) => v.userId === session.user.id),
+    }));
 
-  // Sort by vote count descending
-  enriched.sort((a, b) => b.voteCount - a.voteCount);
+    enriched.sort((a, b) => b.voteCount - a.voteCount);
 
-  return NextResponse.json(enriched);
+    return NextResponse.json(enriched);
+  } catch (error) {
+    console.error("Failed to fetch suggestions:", error);
+    return NextResponse.json({ error: "Failed to load suggestions" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -50,15 +54,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bourbon name is required" }, { status: 400 });
   }
 
-  const suggestion = await prisma.bourbonSuggestion.create({
-    data: {
-      name: name.trim(),
-      distillery: distillery?.trim() || null,
-      notes: notes?.trim() || null,
-      userId: session.user.id,
-      clubId,
-    },
-  });
+  try {
+    const suggestion = await prisma.bourbonSuggestion.create({
+      data: {
+        name: name.trim(),
+        distillery: distillery?.trim() || null,
+        notes: notes?.trim() || null,
+        userId: session.user.id,
+        clubId,
+      },
+    });
 
-  return NextResponse.json(suggestion);
+    return NextResponse.json(suggestion);
+  } catch (error) {
+    console.error("Failed to create suggestion:", error);
+    return NextResponse.json({ error: "Failed to create suggestion" }, { status: 500 });
+  }
 }
