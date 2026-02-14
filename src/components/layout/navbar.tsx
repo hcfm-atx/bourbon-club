@@ -89,8 +89,8 @@ export function Navbar() {
   };
 
   return (
-    <nav className="border-b bg-background sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+    <nav className="border-b border-border/60 dark:border-border/40 backdrop-blur-xl bg-background/80 sticky top-0 z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Link href="/dashboard" className="font-bold text-lg">
