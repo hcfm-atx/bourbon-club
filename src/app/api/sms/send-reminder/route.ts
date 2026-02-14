@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendSMS } from "@/lib/twilio";
 import { isClubAdmin, getClubId } from "@/lib/session";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -13,6 +14,12 @@ export async function POST(req: NextRequest) {
 
   const clubId = await getClubId(session.user.id, session.user.currentClubId);
   if (!clubId) return NextResponse.json({ error: "No active club" }, { status: 400 });
+
+  // Rate limit: max 5 SMS blasts per club per hour
+  const { success } = rateLimit(`sms-reminder:${clubId}`, { maxRequests: 5, windowMs: 60 * 60 * 1000 });
+  if (!success) {
+    return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
+  }
 
   const { message } = await req.json();
   if (!message) {

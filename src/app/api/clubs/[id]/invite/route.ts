@@ -27,6 +27,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Email or phone is required" }, { status: 400 });
   }
 
+  // Validate email format if provided
+  if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== "string" || !emailRegex.test(email) || email.includes("\r") || email.includes("\n")) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
+  }
+
   const club = await prisma.club.findUnique({ where: { id: clubId }, select: { name: true } });
   const clubName = club?.name || "Bourbon Club";
 

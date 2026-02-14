@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isClubAdmin, getClubId } from "@/lib/session";
 import { sendSMS } from "@/lib/twilio";
 import { sendEmail } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -16,6 +17,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!clubId) return NextResponse.json({ error: "No active club" }, { status: 400 });
 
   const { id } = await params;
+
+  // Rate limit: max 3 notifications per poll per hour
+  const { success } = rateLimit(`poll-notify:${id}`, { maxRequests: 3, windowMs: 60 * 60 * 1000 });
+  if (!success) {
+    return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
+  }
   const poll = await prisma.poll.findUnique({ where: { id } });
   if (!poll || poll.clubId !== clubId) {
     return NextResponse.json({ error: "Poll not found" }, { status: 404 });
