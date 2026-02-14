@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { Sparkles } from "lucide-react";
 
 const CATEGORIES = [
   { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs" },
@@ -54,6 +55,7 @@ interface Meeting {
 
 export default function MeetingDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { data: session } = useSession();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
 
@@ -74,6 +76,16 @@ export default function MeetingDetailPage() {
           {meeting.location && ` — ${meeting.location}`}
         </p>
         {meeting.description && <p className="mt-2">{meeting.description}</p>}
+        {meeting.bourbons.length > 0 && (
+          <Button
+            onClick={() => router.push(`/meetings/${id}/taste`)}
+            className="mt-4"
+            variant="default"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Live Tasting Mode
+          </Button>
+        )}
       </div>
 
       {meeting.bourbons.length === 0 && (
