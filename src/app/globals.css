@@ -99,7 +99,7 @@
 .dark {
   --background: #1a1612;
   --foreground: #f5f0e8;
-  --card: 28 20% 10%;
+  --card: #221c17;
   --card-foreground: #f5f0e8;
   --popover: #241f1a;
   --popover-foreground: #f5f0e8;
@@ -108,7 +108,7 @@
   --secondary: #2e2720;
   --secondary-foreground: #f5f0e8;
   --muted: #2e2720;
-  --muted-foreground: 30 10% 70%;
+  --muted-foreground: #b8b0a6;
   --accent: #2e2720;
   --accent-foreground: #f5f0e8;
   --destructive: oklch(0.704 0.191 22.216);
