@@ -3,10 +3,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getClubId } from "@/lib/session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Vote, Star, Wallet, CreditCard } from "lucide-react";
+import { CalendarDays, Vote, Star, Wallet, CreditCard, Flame } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ActivityFeed } from "@/components/activity-feed";
+import { MemberCard } from "@/components/member-card";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
     ? await getClubId(session.user.id, session.user.currentClubId)
     : null;
 
-  const [nextMeeting, openPolls, reviewCount, paidPayments, allExpenses, bourbonsWithImages, recentReviews, recentPolls, recentPayments] = await Promise.all([
+  const [nextMeeting, openPolls, reviewCount, paidPayments, allExpenses, bourbonsWithImages, recentReviews, recentPolls, recentPayments, userRsvps, featuredReview] = await Promise.all([
     prisma.meeting.findFirst({
       where: { clubId: clubId ?? undefined, date: { gte: new Date() } },
       orderBy: { date: "asc" },
@@ -68,11 +69,76 @@ export default async function DashboardPage() {
       orderBy: { paidAt: "desc" },
       take: 10,
     }),
+    prisma.meetingRsvp.findMany({
+      where: {
+        userId: session?.user?.id,
+        status: { in: ["GOING", "MAYBE"] },
+        meeting: {
+          clubId: clubId ?? undefined,
+          date: { lte: new Date() },
+        },
+      },
+      include: {
+        meeting: { select: { date: true } },
+      },
+      orderBy: {
+        meeting: { date: "desc" },
+      },
+    }),
+    prisma.review.findFirst({
+      where: {
+        bourbon: { clubId: clubId ?? undefined },
+        OR: [
+          { notes: { not: "" } },
+          { nose: { not: "" } },
+          { palate: { not: "" } },
+          { finish: { not: "" } },
+        ],
+        NOT: [
+          { notes: null, nose: null, palate: null, finish: null },
+        ],
+      },
+      select: {
+        id: true,
+        notes: true,
+        nose: true,
+        palate: true,
+        finish: true,
+        createdAt: true,
+        user: { select: { name: true } },
+        bourbon: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const totalCollected = paidPayments.reduce((sum, p) => sum + p.duesPeriod.amount, 0);
   const totalExpenses = allExpenses._sum.amount ?? 0;
   const balance = totalCollected - totalExpenses;
+
+  // Calculate current streak
+  const allMeetings = await prisma.meeting.findMany({
+    where: {
+      clubId: clubId ?? undefined,
+      date: { lte: new Date() },
+    },
+    include: {
+      rsvps: {
+        where: { userId: session?.user?.id },
+      },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  let currentStreak = 0;
+  for (const meeting of allMeetings) {
+    const rsvp = meeting.rsvps[0];
+    if (rsvp && (rsvp.status === "GOING" || rsvp.status === "MAYBE")) {
+      currentStreak++;
+    } else {
+      break;
+    }
+  }
 
   // Merge and sort activity feed events
   type ActivityEvent = {
@@ -116,6 +182,8 @@ export default async function DashboardPage() {
           fill
           className="object-cover object-center transition-transform duration-[8000ms] ease-out group-hover:scale-105"
           priority
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54releontdoQf/9k="
         />
         {/* Multi-layer gradient for depth */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80" />
@@ -137,7 +205,7 @@ export default async function DashboardPage() {
           </p>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Link href="/meetings">
           <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-l-4 border-l-amber-600">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -194,11 +262,147 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground mt-0.5">club funds</p>
           </CardContent>
         </Card>
+        <Link href="/profile">
+          <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-l-4 border-l-orange-500">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Current Streak</CardTitle>
+              <Flame className="w-5 h-5 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{currentStreak}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">meetings in a row</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {sortedActivity.length > 0 && (
         <ActivityFeed events={sortedActivity.map((e) => ({ ...e, createdAt: e.createdAt.toISOString() }))} />
       )}
+
+      {featuredReview && (
+        <Card className="border-l-4 border-l-amber-600">
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground font-normal">Featured Tasting Note</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <blockquote className="text-lg md:text-xl italic text-foreground leading-relaxed">
+              "{featuredReview.notes || featuredReview.nose || featuredReview.palate || featuredReview.finish}"
+            </blockquote>
+            <div className="flex items-center justify-between text-sm">
+              <Link href={`/bourbons/${featuredReview.bourbon.id}`} className="text-amber-600 hover:text-amber-700 font-medium">
+                {featuredReview.bourbon.name}
+              </Link>
+              <span className="text-muted-foreground">
+                — {featuredReview.user.name || "Anonymous"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {clubId && (async () => {
+        // Get a random active member (with at least 1 review)
+        const activeMembers = await prisma.user.findMany({
+          where: {
+            memberships: { some: { clubId } },
+            reviews: { some: { bourbon: { clubId } } },
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            memberships: {
+              where: { clubId },
+              select: { role: true },
+            },
+            _count: {
+              select: {
+                reviews: { where: { bourbon: { clubId } } },
+                rsvps: {
+                  where: {
+                    meeting: { clubId },
+                    status: { in: ["GOING", "MAYBE"] },
+                  },
+                },
+              },
+            },
+            reviews: {
+              where: { bourbon: { clubId } },
+              orderBy: { rating: "desc" },
+              take: 1,
+              include: { bourbon: { select: { name: true } } },
+            },
+          },
+        });
+
+        if (activeMembers.length === 0) return null;
+
+        const randomMember = activeMembers[Math.floor(Math.random() * activeMembers.length)];
+
+        // Calculate current streak for spotlight member
+        const spotlightMeetings = await prisma.meeting.findMany({
+          where: { clubId, date: { lte: new Date() } },
+          include: {
+            rsvps: { where: { userId: randomMember.id } },
+          },
+          orderBy: { date: "desc" },
+        });
+
+        let spotlightStreak = 0;
+        for (const meeting of spotlightMeetings) {
+          const rsvp = meeting.rsvps[0];
+          if (rsvp && (rsvp.status === "GOING" || rsvp.status === "MAYBE")) {
+            spotlightStreak++;
+          } else {
+            break;
+          }
+        }
+
+        const memberData = {
+          id: randomMember.id,
+          name: randomMember.name,
+          email: randomMember.email,
+          createdAt: randomMember.createdAt,
+          role: randomMember.memberships[0]?.role,
+          reviewCount: randomMember._count.reviews,
+          meetingCount: randomMember._count.rsvps,
+          currentStreak: spotlightStreak,
+          favoriteBourbon: randomMember.reviews[0]
+            ? {
+                name: randomMember.reviews[0].bourbon.name,
+                rating: randomMember.reviews[0].rating,
+              }
+            : null,
+        };
+
+        const latestReview = randomMember.reviews[0];
+
+        return (
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold">Member Spotlight</h2>
+            <MemberCard member={memberData} />
+            {latestReview && (
+              <Card>
+                <CardContent className="pt-4">
+                  <p className="text-sm text-muted-foreground mb-1">Most recent review</p>
+                  <p className="font-medium">{latestReview.bourbon.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span className="font-semibold">{latestReview.rating.toFixed(1)}/10</span>
+                    </div>
+                    {latestReview.notes && (
+                      <p className="text-sm text-muted-foreground truncate">"{latestReview.notes}"</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+      })()}
 
       {bourbonsWithImages.length > 0 && (
         <div className="space-y-3">
@@ -208,16 +412,19 @@ export default async function DashboardPage() {
               View all &rarr;
             </Link>
           </div>
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
+          <div className="masonry">
             {bourbonsWithImages.map((b) => (
               <Link key={b.id} href={`/bourbons/${b.id}`}>
                 <Card className="hover:shadow-md hover:scale-[1.02] transition-transform duration-200 overflow-hidden">
-                  <div className="relative h-48 w-full">
+                  <div className="relative h-48 w-full overflow-hidden bg-muted">
                     <Image
                       src={b.imageUrl!}
                       alt={b.name}
                       fill
-                      className="object-cover"
+                      className="object-cover transition-opacity duration-500"
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54releontdoQf/9k="
+                      sizes="(max-width: 768px) 50vw, 33vw"
                     />
                   </div>
                   <CardContent className="p-3">

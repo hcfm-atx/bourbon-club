@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const purchasedOnly = searchParams.get("purchased") === "true";
+  const cursor = searchParams.get("cursor");
+  const limit = parseInt(searchParams.get("limit") || "20", 10);
 
   const bourbons = await prisma.bourbon.findMany({
     where: { clubId, ...(purchasedOnly ? { purchased: true } : {}) },
@@ -22,7 +24,15 @@ export async function GET(req: NextRequest) {
       reviews: { select: { rating: true } },
     },
     orderBy: { name: "asc" },
+    take: cursor ? limit + 1 : undefined,
+    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
   });
+
+  let nextCursor: string | null = null;
+  if (cursor && bourbons.length > limit) {
+    const nextItem = bourbons.pop();
+    nextCursor = nextItem!.id;
+  }
 
   const result = bourbons.map((b) => ({
     ...b,
@@ -32,7 +42,7 @@ export async function GET(req: NextRequest) {
     reviewCount: b.reviews.length,
   }));
 
-  return NextResponse.json(result);
+  return NextResponse.json({ bourbons: result, nextCursor });
 }
 
 export async function POST(req: NextRequest) {

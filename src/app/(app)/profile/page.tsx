@@ -46,6 +46,12 @@ export default function ProfilePage() {
   const [joining, setJoining] = useState<string | null>(null);
   const [newClubName, setNewClubName] = useState("");
   const [creatingClub, setCreatingClub] = useState(false);
+  const [streaks, setStreaks] = useState<{
+    currentStreak: number;
+    longestStreak: number;
+    totalAttended: number;
+    attendancePercentage: number;
+  } | null>(null);
 
   const loadClubs = () => {
     fetch("/api/clubs").then((r) => r.json()).then(setMyClubs);
@@ -62,7 +68,12 @@ export default function ProfilePage() {
         setHasPassword(data.hasPassword || false);
       });
     loadClubs();
-  }, []);
+    if (session?.user?.id) {
+      fetch(`/api/members/${session.user.id}/streaks`)
+        .then((r) => r.json())
+        .then(setStreaks);
+    }
+  }, [session?.user?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,6 +198,43 @@ export default function ProfilePage() {
           {initials}
         </div>
       </div>
+
+      {streaks && (
+        <Card className="mb-6 border-l-4 border-l-amber-600">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="text-2xl">🔥</span>
+              Meeting Attendance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-secondary rounded-lg">
+                <p className="text-3xl font-bold text-amber-600">
+                  {streaks.currentStreak}
+                </p>
+                <p className="text-sm text-muted-foreground">Current Streak</p>
+              </div>
+              <div className="text-center p-3 bg-secondary rounded-lg">
+                <p className="text-3xl font-bold">{streaks.longestStreak}</p>
+                <p className="text-sm text-muted-foreground">Longest Streak</p>
+              </div>
+              <div className="text-center p-3 bg-secondary rounded-lg">
+                <p className="text-3xl font-bold">{streaks.totalAttended}</p>
+                <p className="text-sm text-muted-foreground">
+                  Meetings Attended
+                </p>
+              </div>
+              <div className="text-center p-3 bg-secondary rounded-lg">
+                <p className="text-3xl font-bold">
+                  {streaks.attendancePercentage}%
+                </p>
+                <p className="text-sm text-muted-foreground">Attendance Rate</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

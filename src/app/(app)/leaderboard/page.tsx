@@ -138,18 +138,18 @@ export default async function LeaderboardPage() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Trophy className="w-10 h-10 text-amber-500" />
-        <h1 className="text-3xl font-bold">Leaderboard</h1>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex items-center gap-2 md:gap-3">
+        <Trophy className="w-8 h-8 md:w-10 md:h-10 text-amber-500" />
+        <h1 className="text-2xl md:text-3xl font-bold">Leaderboard</h1>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2">
         {/* Most Reviews Written */}
         <Card className="border-l-4 border-l-purple-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-semibold text-2xl">
-              <Star className="w-5 h-5 text-purple-500" />
+            <CardTitle className="flex items-center gap-2 font-semibold text-lg md:text-2xl">
+              <Star className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
               Most Active Reviewers
             </CardTitle>
           </CardHeader>

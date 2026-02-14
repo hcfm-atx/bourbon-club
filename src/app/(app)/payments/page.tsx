@@ -66,8 +66,8 @@ export default function PaymentsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Payments</h1>
+      <div className="space-y-4 md:space-y-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Payments</h1>
         <Card>
           <CardHeader>
             <Skeleton className="h-6 w-32" />
@@ -85,8 +85,8 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Payments</h1>
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-2xl md:text-3xl font-bold">Payments</h1>
 
       {unpaid.length > 0 && (
         <Card className="border-l-4 border-l-amber-600 bg-amber-50 dark:bg-amber-950/20">

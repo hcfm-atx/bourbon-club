@@ -11,6 +11,10 @@ import { RatingBarChart } from "@/components/ratings/rating-bar-chart";
 import { RatingScatterPlot } from "@/components/ratings/rating-scatter-plot";
 import { RatingRadarChart } from "@/components/ratings/rating-radar-chart";
 import { MemberHistory } from "@/components/ratings/member-history";
+import { RatingDistributionChart } from "@/components/ratings/rating-distribution-chart";
+import { CategoryRadarChart } from "@/components/ratings/category-radar-chart";
+import { TopRatedChart } from "@/components/ratings/top-rated-chart";
+import { RatingTrendChart } from "@/components/ratings/rating-trend-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { Star, Wine } from "lucide-react";
@@ -96,17 +100,17 @@ export default function RatingsPage() {
   const compareBourbons = data.filter((b) => compareIds.has(b.id));
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Ratings</h1>
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-2xl md:text-3xl font-bold">Ratings</h1>
 
       {/* Filters */}
       <Card>
         <CardContent className="pt-4">
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div className="space-y-1">
               <Label className="text-xs">Distillery</Label>
               <Select value={distillery} onValueChange={setDistillery}>
-                <SelectTrigger className="w-[180px]"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   {filterOptions.distilleries.map((d) => (
@@ -118,7 +122,7 @@ export default function RatingsPage() {
             <div className="space-y-1">
               <Label className="text-xs">Type</Label>
               <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="w-[180px]"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   {filterOptions.types.map((t) => (
@@ -160,7 +164,7 @@ export default function RatingsPage() {
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader><CardTitle>Rating vs Cost</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Rating Distribution</CardTitle></CardHeader>
                 <CardContent>
                   <Skeleton className="h-64 w-full" />
                 </CardContent>
@@ -174,12 +178,43 @@ export default function RatingsPage() {
             />
           ) : (
             <>
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader><CardTitle>Top 10 Rated Bourbons</CardTitle></CardHeader>
+                  <CardContent>
+                    <TopRatedChart data={data} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle>Rating Distribution</CardTitle></CardHeader>
+                  <CardContent>
+                    <RatingDistributionChart data={data} />
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader><CardTitle>Category Breakdown</CardTitle></CardHeader>
+                  <CardContent>
+                    <CategoryRadarChart data={data} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle>Rating Trend Over Time</CardTitle></CardHeader>
+                  <CardContent>
+                    <RatingTrendChart data={data} />
+                  </CardContent>
+                </Card>
+              </div>
+
               <Card>
-                <CardHeader><CardTitle>Top Rated Bourbons</CardTitle></CardHeader>
+                <CardHeader><CardTitle>All Rated Bourbons</CardTitle></CardHeader>
                 <CardContent>
                   <RatingBarChart data={data} />
                 </CardContent>
               </Card>
+
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">

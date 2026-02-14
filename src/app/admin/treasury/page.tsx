@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DollarSign, Receipt } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface Expense {
   id: string;
@@ -176,6 +177,56 @@ export default function AdminTreasuryPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Expense Breakdown Chart */}
+      {expenses.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Expense Breakdown by Category</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={(() => {
+                    const categoryTotals = expenses.reduce((acc, expense) => {
+                      const category = categoryLabel(expense.category);
+                      acc[category] = (acc[category] || 0) + expense.amount;
+                      return acc;
+                    }, {} as Record<string, number>);
+
+                    return Object.entries(categoryTotals).map(([category, amount]) => ({
+                      category,
+                      amount,
+                      percentage: ((amount / treasury!.totalExpenses) * 100).toFixed(1),
+                    }));
+                  })()}
+                  dataKey="amount"
+                  nameKey="category"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  label={(props: any) => `${props.name} ${props.percentage}%`}
+                  labelLine={false}
+                >
+                  {[
+                    "#d97706",
+                    "#b45309",
+                    "#92400e",
+                    "#78350f",
+                    "#fbbf24",
+                  ].map((color, index) => (
+                    <Cell key={index} fill={color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => fmt(Number(value))} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Expenses table */}
       <Card>

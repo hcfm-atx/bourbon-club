@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Check, Eye, Wind, UtensilsCrossed, Droplets, Timer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Eye, Wind, UtensilsCrossed, Droplets, Timer, Maximize, Minimize, Play, Pause, RotateCcw } from "lucide-react";
 
 const CATEGORIES = [
   { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", icon: Eye, placeholder: "e.g., Deep mahogany with ruby highlights", borderColor: "border-l-amber-300" },
@@ -77,6 +77,9 @@ export default function LiveTastingPage() {
   const [notes, setNotes] = useState<BourbonNotes>({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
   const [saving, setSaving] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(15 * 60); // 15 minutes in seconds
+  const [timerActive, setTimerActive] = useState(false);
 
   const loadMeeting = async () => {
     const res = await fetch(`/api/meetings/${id}`);
@@ -116,8 +119,28 @@ export default function LiveTastingPage() {
         setNotes({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
       }
       setExpandedCategory(null);
+      // Reset timer when switching bourbons
+      setTimeRemaining(15 * 60);
+      setTimerActive(false);
     }
   }, [currentIndex, meeting, session?.user?.id]);
+
+  // Timer countdown
+  useEffect(() => {
+    if (!timerActive) return;
+
+    const interval = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          setTimerActive(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerActive]);
 
   if (!meeting) return <p className="p-4">Loading...</p>;
 
@@ -188,6 +211,16 @@ export default function LiveTastingPage() {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const toggleFullscreen = () => {
+    setFullscreen(!fullscreen);
+  };
+
   // Completion screen
   if (allReviewsComplete && myReview) {
     return (
@@ -214,23 +247,67 @@ export default function LiveTastingPage() {
   }
 
   return (
-    <div className="min-h-screen pb-safe">
+    <div className={`min-h-screen pb-safe ${fullscreen ? "fixed inset-0 z-50 overflow-y-auto" : ""}`}>
       {/* Header - Fixed */}
-      <div className="sticky top-0 z-10 bg-background border-b p-4">
+      <div className={`sticky top-0 z-10 bg-background border-b p-4 ${fullscreen ? "" : ""}`}>
         <div className="flex items-center justify-between mb-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push(`/meetings/${id}`)}
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Exit
-          </Button>
-          <Badge variant="secondary">
-            Bourbon {currentIndex + 1} of {totalBourbons}
-          </Badge>
+          {!fullscreen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(`/meetings/${id}`)}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Exit
+            </Button>
+          )}
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className={fullscreen ? "text-base px-4 py-2" : ""}>
+              {currentIndex + 1} of {totalBourbons}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleFullscreen}
+              title={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </Button>
+          </div>
         </div>
-        <h1 className="text-xl font-bold truncate">{meeting.title}</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className={`font-bold truncate ${fullscreen ? "text-2xl" : "text-xl"}`}>{meeting.title}</h1>
+
+          {/* Timer */}
+          <div className="flex items-center gap-2">
+            <div className={`font-mono font-bold ${fullscreen ? "text-2xl" : "text-lg"} ${timeRemaining < 60 ? "text-amber-600" : "text-foreground"}`}>
+              {formatTime(timeRemaining)}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTimerActive(!timerActive)}
+              disabled={timeRemaining === 0}
+            >
+              {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setTimeRemaining(15 * 60); setTimerActive(false); }}
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-3 bg-secondary rounded-full h-2">
+          <div
+            className="bg-amber-600 rounded-full h-2 transition-all duration-300"
+            style={{ width: `${((currentIndex + 1) / totalBourbons) * 100}%` }}
+          />
+        </div>
       </div>
 
       {/* Main Content */}
@@ -238,17 +315,17 @@ export default function LiveTastingPage() {
         {/* Bourbon Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">{currentBourbon.bourbon.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <CardTitle className={fullscreen ? "text-4xl" : "text-2xl"}>{currentBourbon.bourbon.name}</CardTitle>
+            <p className={fullscreen ? "text-lg text-muted-foreground" : "text-sm text-muted-foreground"}>
               {currentBourbon.bourbon.distillery}
               {currentBourbon.bourbon.proof && ` — ${currentBourbon.bourbon.proof}°`}
             </p>
           </CardHeader>
           <CardContent>
             <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-2">Overall Score</p>
-              <p className="text-5xl font-bold">{overallScore}</p>
-              <p className="text-sm text-muted-foreground">/10</p>
+              <p className={fullscreen ? "text-lg text-muted-foreground mb-3" : "text-sm text-muted-foreground mb-2"}>Overall Score</p>
+              <p className={fullscreen ? "text-7xl font-bold" : "text-5xl font-bold"}>{overallScore}</p>
+              <p className={fullscreen ? "text-lg text-muted-foreground mt-2" : "text-sm text-muted-foreground"}>/10</p>
             </div>
           </CardContent>
         </Card>
@@ -262,10 +339,10 @@ export default function LiveTastingPage() {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Icon className="w-5 h-5 text-muted-foreground" />
-                      <h3 className="font-semibold">{cat.label}</h3>
+                      <Icon className={fullscreen ? "w-7 h-7 text-muted-foreground" : "w-5 h-5 text-muted-foreground"} />
+                      <h3 className={fullscreen ? "font-semibold text-xl" : "font-semibold"}>{cat.label}</h3>
                     </div>
-                    <Badge variant="outline" className="text-base px-3 py-1">
+                    <Badge variant="outline" className={fullscreen ? "text-xl px-4 py-2" : "text-base px-3 py-1"}>
                       {scores[cat.key as keyof BourbonScores]}/10
                     </Badge>
                   </div>
@@ -276,7 +353,7 @@ export default function LiveTastingPage() {
                       <Button
                         key={num}
                         variant={scores[cat.key as keyof BourbonScores] === num ? "default" : "outline"}
-                        className="h-14 text-lg font-semibold"
+                        className={fullscreen ? "h-20 text-2xl font-semibold" : "h-14 text-lg font-semibold"}
                         onClick={() => setScores((prev) => ({ ...prev, [cat.key]: num }))}
                       >
                         {num}

@@ -60,14 +60,14 @@ export default function PollsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Polls</h1>
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-2xl md:text-3xl font-bold">Polls</h1>
       <div className="grid gap-4">
         {polls.map((poll) => (
           <Card key={poll.id}>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-lg">{poll.title}</CardTitle>
+            <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-3">
+              <div className="space-y-1 flex-1">
+                <CardTitle className="text-base md:text-lg">{poll.title}</CardTitle>
                 <div className="flex items-center gap-2">
                   <Badge variant={poll.status === "OPEN" ? "default" : "secondary"}>{poll.status}</Badge>
                   <Badge variant="outline" className="text-xs">
@@ -77,7 +77,7 @@ export default function PollsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">
                   {poll.options.length} options
                   {" · "}{poll.options.reduce((sum, o) => sum + o.votes.length, 0)} votes
@@ -85,8 +85,8 @@ export default function PollsPage() {
                     <Badge variant="outline" className="ml-2 text-green-600 border-green-600">Voted</Badge>
                   )}
                 </div>
-                <Link href={`/polls/${poll.id}`}>
-                  <Button size="sm" variant={poll.status === "OPEN" ? "default" : "outline"}>
+                <Link href={`/polls/${poll.id}`} className="w-full sm:w-auto">
+                  <Button size="sm" variant={poll.status === "OPEN" ? "default" : "outline"} className="w-full sm:w-auto min-h-[44px]">
                     {poll.status === "OPEN" ? "Vote Now" : "View Results"}
                   </Button>
                 </Link>

@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import {
   LayoutDashboard, CalendarDays, Vote, GlassWater, Star, CreditCard,
-  Users, Wallet, Settings, Menu, Moon, Sun, Trophy, Heart,
+  Users, Wallet, Settings, Menu, Moon, Sun, Trophy, Heart, Compass, Award,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,7 +26,9 @@ const memberLinks: NavLink[] = [
   { href: "/bourbons", label: "Bourbons", icon: GlassWater },
   { href: "/ratings", label: "Ratings", icon: Star },
   { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { href: "/achievements", label: "Achievements", icon: Award },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
+  { href: "/discover", label: "Discover", icon: Compass },
   { href: "/payments", label: "Payments", icon: CreditCard },
 ];
 
@@ -57,6 +59,15 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Listen for theme toggle events from keyboard shortcut
+  useEffect(() => {
+    const handleThemeToggle = () => {
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    };
+    window.addEventListener("toggle-theme", handleThemeToggle);
+    return () => window.removeEventListener("toggle-theme", handleThemeToggle);
+  }, [resolvedTheme, setTheme]);
 
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";

@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 interface BourbonInfo {
   id: string;
@@ -45,6 +46,7 @@ export default function PollVotePage() {
   const [poll, setPoll] = useState<Poll | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [optimisticSelected, setOptimisticSelected] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     fetch(`/api/polls/${id}`).then((r) => r.json()).then((data: Poll) => {
@@ -71,22 +73,32 @@ export default function PollVotePage() {
   };
 
   const submitVotes = async () => {
+    const previousSelected = new Set(selected);
     setSaving(true);
+    setOptimisticSelected(new Set(selected));
+
     const res = await fetch(`/api/polls/${id}/vote`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ optionIds: Array.from(selected) }),
     });
+
     if (res.ok) {
       toast.success("Votes submitted");
-      // Refresh poll data
+      setOptimisticSelected(null);
       const updated = await fetch(`/api/polls/${id}`).then((r) => r.json());
       setPoll(updated);
     } else {
-      toast.error("Failed to submit votes");
+      setOptimisticSelected(null);
+      setSelected(previousSelected);
+      toast.error("Failed to submit votes", {
+        action: { label: "Retry", onClick: submitVotes }
+      });
     }
     setSaving(false);
   };
+
+  const displaySelected = optimisticSelected !== null ? optimisticSelected : selected;
 
   if (!poll) {
     return (
@@ -120,13 +132,14 @@ export default function PollVotePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
+    <div className="max-w-lg mx-auto space-y-4 md:space-y-6">
+      <Breadcrumbs />
       <Link href="/polls" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
         <ArrowLeft className="w-4 h-4" />
         Back to Polls
       </Link>
-      <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold">{poll.title}</h1>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold">{poll.title}</h1>
         <Badge variant={poll.status === "OPEN" ? "default" : "secondary"}>{poll.status}</Badge>
       </div>
       <div className="grid gap-3">
@@ -137,7 +150,7 @@ export default function PollVotePage() {
                 <div className="flex items-center gap-3">
                   {poll.status === "OPEN" && (
                     <Checkbox
-                      checked={selected.has(option.id)}
+                      checked={displaySelected.has(option.id)}
                       onCheckedChange={() => toggleOption(option.id)}
                     />
                   )}
@@ -171,7 +184,7 @@ export default function PollVotePage() {
         ))}
       </div>
       {poll.status === "OPEN" && (
-        <Button onClick={submitVotes} disabled={saving} className="w-full">
+        <Button onClick={submitVotes} disabled={saving} className="w-full min-h-[44px]">
           {saving ? "Submitting..." : "Submit Votes"}
         </Button>
       )}

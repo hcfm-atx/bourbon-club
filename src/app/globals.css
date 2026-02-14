@@ -99,7 +99,7 @@
 .dark {
   --background: #1a1612;
   --foreground: #f5f0e8;
-  --card: #241f1a;
+  --card: 28 20% 10%;
   --card-foreground: #f5f0e8;
   --popover: #241f1a;
   --popover-foreground: #f5f0e8;
@@ -108,7 +108,7 @@
   --secondary: #2e2720;
   --secondary-foreground: #f5f0e8;
   --muted: #2e2720;
-  --muted-foreground: #a8a29e;
+  --muted-foreground: 30 10% 70%;
   --accent: #2e2720;
   --accent-foreground: #f5f0e8;
   --destructive: oklch(0.704 0.191 22.216);
@@ -141,6 +141,14 @@
   --bourbon-polls: #3b82f6;
   --bourbon-ratings: #a855f7;
   --bourbon-treasury: #16a34a;
+}
+
+/* Amber glow on focused elements in dark mode */
+.dark button:focus-visible,
+.dark a:focus-visible,
+.dark input:focus-visible,
+.dark textarea:focus-visible {
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
 }
 
 @layer base {
@@ -245,5 +253,96 @@
 
   main {
     animation: fadeIn 0.3s ease-out;
+  }
+
+  /* Scroll reveal animations */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Staggered children */
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  }
+  .reveal-stagger.visible > *:nth-child(1) { transition-delay: 0ms; opacity: 1; transform: translateY(0); }
+  .reveal-stagger.visible > *:nth-child(2) { transition-delay: 75ms; opacity: 1; transform: translateY(0); }
+  .reveal-stagger.visible > *:nth-child(3) { transition-delay: 150ms; opacity: 1; transform: translateY(0); }
+  .reveal-stagger.visible > *:nth-child(4) { transition-delay: 225ms; opacity: 1; transform: translateY(0); }
+  .reveal-stagger.visible > *:nth-child(5) { transition-delay: 300ms; opacity: 1; transform: translateY(0); }
+  .reveal-stagger.visible > *:nth-child(6) { transition-delay: 375ms; opacity: 1; transform: translateY(0); }
+
+  /* Masonry grid layout */
+  .masonry {
+    columns: 2;
+    gap: 1rem;
+  }
+  @media (min-width: 768px) {
+    .masonry {
+      columns: 3;
+    }
+  }
+  .masonry > * {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* Liquid pour loading animation */
+  @keyframes liquidFill {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(0); }
+  }
+
+  .liquid-fill {
+    animation: liquidFill 2s ease-in-out infinite alternate;
+  }
+
+  /* Seasonal theme support */
+  :root[data-season="fall"] {
+    --primary: #b8560b;
+    --bourbon-amber: #c2610c;
+    --bourbon-gold: #d97706;
+  }
+
+  :root[data-season="winter"] {
+    --primary: #0c4a6e;
+    --bourbon-amber: #0369a1;
+    --bourbon-gold: #0ea5e9;
+  }
+
+  :root[data-season="spring"] {
+    --primary: #15803d;
+    --bourbon-amber: #16a34a;
+    --bourbon-gold: #22c55e;
+  }
+
+  :root[data-season="summer"] {
+    --primary: #ca8a04;
+    --bourbon-amber: #eab308;
+    --bourbon-gold: #facc15;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .reveal-stagger > * {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* Print stylesheet */
+  @media print {
+    nav, footer, button, .no-print { display: none !important; }
+    body { background: white !important; color: black !important; }
+    * { box-shadow: none !important; }
+    a { text-decoration: underline; }
+    .print-break { page-break-before: always; }
   }
 }

@@ -15,6 +15,7 @@ import { Sparkles, Check, HelpCircle, X, ChevronDown, ChevronUp, Download, Arrow
 import { generateMeetingPdf } from "@/lib/meeting-pdf";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 const CATEGORIES = [
   { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs" },
@@ -145,23 +146,25 @@ export default function MeetingDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
+      <Breadcrumbs />
       <Link href="/meetings" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
         <ArrowLeft className="w-4 h-4" />
         Back to Meetings
       </Link>
       <div>
-        <h1 className="text-3xl font-bold">{meeting.title}</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold">{meeting.title}</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
           {new Date(meeting.date).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "long", month: "long", day: "numeric", year: "numeric" })}
           {meeting.location && ` — ${meeting.location}`}
         </p>
-        {meeting.description && <p className="mt-2">{meeting.description}</p>}
-        <div className="flex gap-2 mt-4">
+        {meeting.description && <p className="mt-2 text-sm md:text-base">{meeting.description}</p>}
+        <div className="flex flex-col sm:flex-row gap-2 mt-4">
           {meeting.bourbons.length > 0 && (
             <Button
               onClick={() => router.push(`/meetings/${id}/taste`)}
               variant="default"
+              className="w-full sm:w-auto min-h-[44px]"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Live Tasting Mode
@@ -171,6 +174,7 @@ export default function MeetingDetailPage() {
             onClick={handleExportPdf}
             variant="outline"
             disabled={generatingPdf}
+            className="w-full sm:w-auto min-h-[44px]"
           >
             <Download className="w-4 h-4 mr-2" />
             {generatingPdf ? "Generating..." : "Download PDF"}
@@ -214,22 +218,33 @@ function RsvpSection({
 }) {
   const [saving, setSaving] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [optimisticRsvp, setOptimisticRsvp] = useState<RsvpStatus | null>(null);
 
   const setRsvp = async (status: RsvpStatus) => {
+    const previousRsvp = myRsvp;
     setSaving(true);
+    setOptimisticRsvp(status);
+
     const res = await fetch(`/api/meetings/${meetingId}/rsvp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+
     if (res.ok) {
       toast.success("RSVP updated");
+      setOptimisticRsvp(null);
       onRsvpChanged();
     } else {
-      toast.error("Failed to update RSVP");
+      setOptimisticRsvp(null);
+      toast.error("Failed to update RSVP", {
+        action: { label: "Retry", onClick: () => setRsvp(status) }
+      });
     }
     setSaving(false);
   };
+
+  const displayRsvp = optimisticRsvp !== null ? optimisticRsvp : myRsvp;
 
   const goingCount = rsvps.filter((r) => r.status === "GOING").length;
   const maybeCount = rsvps.filter((r) => r.status === "MAYBE").length;
@@ -245,30 +260,30 @@ function RsvpSection({
         <CardTitle>RSVP</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
-            variant={myRsvp === "GOING" ? "default" : "outline"}
+            variant={displayRsvp === "GOING" ? "default" : "outline"}
             onClick={() => setRsvp("GOING")}
             disabled={saving}
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           >
             <Check className="w-4 h-4 mr-2" />
             Going
           </Button>
           <Button
-            variant={myRsvp === "MAYBE" ? "default" : "outline"}
+            variant={displayRsvp === "MAYBE" ? "default" : "outline"}
             onClick={() => setRsvp("MAYBE")}
             disabled={saving}
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           >
             <HelpCircle className="w-4 h-4 mr-2" />
             Maybe
           </Button>
           <Button
-            variant={myRsvp === "NOT_GOING" ? "default" : "outline"}
+            variant={displayRsvp === "NOT_GOING" ? "default" : "outline"}
             onClick={() => setRsvp("NOT_GOING")}
             disabled={saving}
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           >
             <X className="w-4 h-4 mr-2" />
             Can&apos;t Make It

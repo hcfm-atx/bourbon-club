@@ -1,24 +1,33 @@
 "use client";
-import { useEffect, useRef } from "react";
+
+import { useEffect } from "react";
 
 export function useScrollReveal() {
-  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("in-view");
+            entry.target.classList.add("visible");
           }
         });
       },
-      { threshold: 0.1 }
+      {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px",
+      }
     );
-    const children = element.querySelectorAll(".reveal-on-scroll");
-    children.forEach((child) => observer.observe(child));
-    return () => { children.forEach((child) => observer.unobserve(child)); };
+
+    // Observe all elements with reveal classes
+    const revealElements = document.querySelectorAll(".reveal, .reveal-stagger");
+    revealElements.forEach((el) => observer.observe(el));
+
+    return () => {
+      revealElements.forEach((el) => observer.unobserve(el));
+    };
   }, []);
-  return ref;
 }

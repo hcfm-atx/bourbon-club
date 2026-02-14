@@ -130,6 +130,8 @@ model User {
   suggestions        BourbonSuggestion[]
   suggestionVotes    SuggestionVote[]
   rsvps              MeetingRsvp[]
+  reactions          ReviewReaction[]
+  achievements       UserAchievement[]
 }
 
 model Club {
@@ -291,9 +293,10 @@ model Review {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bourbon        Bourbon         @relation(fields: [bourbonId], references: [id], onDelete: Cascade)
-  meetingBourbon MeetingBourbon? @relation(fields: [meetingBourbonId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bourbon        Bourbon           @relation(fields: [bourbonId], references: [id], onDelete: Cascade)
+  meetingBourbon MeetingBourbon?   @relation(fields: [meetingBourbonId], references: [id], onDelete: Cascade)
+  reactions      ReviewReaction[]
 
   @@unique([userId, meetingBourbonId])
 }
@@ -393,4 +396,42 @@ model MeetingRsvp {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, userId])
+}
+
+model ReviewReaction {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  type      String   // "helpful", "agree", "interesting", "great"
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  key         String   @unique  // "first_review", "10_reviews", "streak_5", etc.
+  name        String
+  description String
+  icon        String   // emoji or lucide icon name
+  threshold   Int      // number needed to earn
+  category    String   // "reviews", "meetings", "social", "tasting"
+  createdAt   DateTime @default(now())
+
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
 }

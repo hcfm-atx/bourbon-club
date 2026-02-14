@@ -50,6 +50,8 @@ export default function BourbonsPage() {
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -61,24 +63,70 @@ export default function BourbonsPage() {
   const [suggestions, setSuggestions] = useState<CatalogEntry[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
+  const [deletedBourbon, setDeletedBourbon] = useState<{ id: string; data: Bourbon } | null>(null);
 
-  const loadBourbons = () => {
-    fetch("/api/bourbons")
-      .then((r) => r.json())
-      .then(setBourbons)
-      .finally(() => setLoading(false));
+  const loadBourbons = async () => {
+    try {
+      const res = await fetch("/api/bourbons?limit=20");
+      const data = await res.json();
+      setBourbons(data.bourbons || data);
+      setNextCursor(data.nextCursor || null);
+    } catch (error) {
+      toast.error("Failed to load bourbons");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/bourbons?limit=20&cursor=${nextCursor}`);
+      const data = await res.json();
+      setBourbons(prev => [...prev, ...(data.bourbons || [])]);
+      setNextCursor(data.nextCursor || null);
+    } catch (error) {
+      toast.error("Failed to load more bourbons");
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const deleteBourbon = async (id: string) => {
+    const bourbon = bourbons.find(b => b.id === id);
+    if (!bourbon) return;
+
     const ok = await confirmDialog({ title: "Delete Bourbon", description: "Delete this bourbon? This cannot be undone.", confirmLabel: "Delete", destructive: true });
     if (!ok) return;
-    const res = await fetch(`/api/bourbons/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      toast.success("Bourbon deleted");
-      setBourbons((prev) => prev.filter((b) => b.id !== id));
-    } else {
-      toast.error("Failed to delete bourbon");
-    }
+
+    setDeletedBourbon({ id, data: bourbon });
+    setBourbons((prev) => prev.filter((b) => b.id !== id));
+
+    let undoTimer: NodeJS.Timeout | null = null;
+    const performDelete = async () => {
+      const res = await fetch(`/api/bourbons/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setBourbons((prev) => [...prev, bourbon].sort((a, b) => a.name.localeCompare(b.name)));
+        setDeletedBourbon(null);
+        toast.error("Failed to delete bourbon");
+      }
+    };
+
+    undoTimer = setTimeout(performDelete, 5000);
+
+    toast.success("Bourbon deleted", {
+      description: bourbon.name,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          if (undoTimer) clearTimeout(undoTimer);
+          setBourbons((prev) => [...prev, bourbon].sort((a, b) => a.name.localeCompare(b.name)));
+          setDeletedBourbon(null);
+          toast.info("Delete cancelled");
+        }
+      }
+    });
   };
 
   const togglePurchased = async (bourbon: Bourbon) => {
@@ -95,6 +143,22 @@ export default function BourbonsPage() {
   };
 
   useEffect(() => { loadBourbons(); }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextCursor && !loadingMore && !search) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const sentinel = document.getElementById('scroll-sentinel');
+    if (sentinel) observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, search]);
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -145,13 +209,22 @@ export default function BourbonsPage() {
       }),
     });
     if (res.ok) {
-      toast.success("Bourbon added");
+      const newBourbon = await res.json();
+      toast.success("Bourbon added", {
+        description: form.name,
+        action: {
+          label: "View",
+          onClick: () => router.push(`/bourbons/${newBourbon.id}`)
+        }
+      });
       setShowForm(false);
       setForm({ name: "", distillery: "", proof: "", price: "", type: "BOURBON" });
       setImageFile(null);
       loadBourbons();
     } else {
-      toast.error("Failed to add bourbon");
+      toast.error("Failed to add bourbon", {
+        action: { label: "Retry", onClick: () => handleSubmit(new Event('submit') as any) }
+      });
     }
     setSaving(false);
   };
@@ -163,14 +236,14 @@ export default function BourbonsPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Bourbons</h1>
-        <Button onClick={() => setShowForm(true)}>Add Bourbon</Button>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold">Bourbons</h1>
+        <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto min-h-[44px]">Add Bourbon</Button>
       </div>
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Bourbon</DialogTitle>
           </DialogHeader>
@@ -261,8 +334,15 @@ export default function BourbonsPage() {
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}>
-              <Skeleton className="h-48 w-full rounded-t-lg" />
+            <Card key={i} className="overflow-hidden">
+              <div className="relative h-48 w-full bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20">
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent" style={{ animation: 'shimmer 2s infinite' }} />
+                </div>
+                <div className="absolute bottom-2 right-2">
+                  <Skeleton className="h-6 w-12 rounded-full" />
+                </div>
+              </div>
               <CardHeader>
                 <Skeleton className="h-6 w-3/4" />
               </CardHeader>
@@ -292,7 +372,7 @@ export default function BourbonsPage() {
           onAction={() => setShowForm(true)}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="masonry">
           {filtered.map((bourbon) => (
           <Card
             key={bourbon.id}
@@ -301,14 +381,17 @@ export default function BourbonsPage() {
           >
             {bourbon.imageUrl && (
               <div
-                className="relative h-48 w-full cursor-zoom-in"
+                className="relative h-48 w-full cursor-zoom-in overflow-hidden bg-muted"
                 onClick={(e) => { e.stopPropagation(); setPreviewImage({ url: bourbon.imageUrl!, name: bourbon.name }); }}
               >
                 <Image
                   src={bourbon.imageUrl}
                   alt={bourbon.name}
                   fill
-                  className="object-cover rounded-t-lg"
+                  className="object-cover rounded-t-lg transition-opacity duration-500"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54releontdoQf/9k="
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
                 {bourbon.avgRating !== null && (
                   <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -366,6 +449,24 @@ export default function BourbonsPage() {
           </Card>
           ))}
         </div>
+      )}
+
+      {!loading && !search && filtered.length > 0 && (
+        <>
+          <div id="scroll-sentinel" className="h-4" />
+          {nextCursor && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="min-w-[200px]"
+              >
+                {loadingMore ? "Loading..." : "Load More Bourbons"}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {previewImage && (

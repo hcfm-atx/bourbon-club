@@ -16,6 +16,10 @@ import { ChevronLeft, Star, Eye, Wind, UtensilsCrossed, Droplets, Timer } from "
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { ReviewReactions } from "@/components/review-reactions";
+import { FlavorWheel } from "@/components/flavor-wheel";
+import { WordCloud } from "@/components/word-cloud";
 
 interface Review {
   id: string;
@@ -235,55 +239,151 @@ export default function BourbonDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/bourbons" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 w-fit">
-        <ChevronLeft className="w-4 h-4" /> Back to Bourbons
-      </Link>
-      <div className="flex flex-col md:flex-row gap-6">
-        {bourbon.imageUrl && (
-          <div
-            className="relative w-full md:w-64 h-64 shrink-0 cursor-zoom-in"
-            onClick={() => setPreviewImage(true)}
-          >
-            <Image src={bourbon.imageUrl} alt={bourbon.name} fill className="object-cover rounded-lg" />
+      <Breadcrumbs />
+      <div className="flex items-center justify-between">
+        <Link href="/bourbons" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 w-fit">
+          <ChevronLeft className="w-4 h-4" /> Back to Bourbons
+        </Link>
+        <Link href="/bourbons/compare">
+          <Button variant="outline" size="sm">
+            Compare Bourbons
+          </Button>
+        </Link>
+      </div>
+
+      {/* Hero Section with Image */}
+      {bourbon.imageUrl ? (
+        <>
+          <div className="relative rounded-2xl overflow-hidden h-64 group">
+            <Image
+              src={bourbon.imageUrl}
+              alt={bourbon.name}
+              fill
+              className="object-cover transition-transform duration-[8000ms] ease-out group-hover:scale-105"
+              priority
+              sizes="100vw"
+            />
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80" />
+
+            {/* Content */}
+            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
+              <div className="w-12 h-1 bg-gradient-to-r from-amber-400 to-amber-600 mb-3 rounded-full" />
+
+              {bourbon.distillery && (
+                <p className="text-amber-400 text-xs md:text-sm tracking-[0.2em] uppercase font-semibold mb-2">
+                  {bourbon.distillery}
+                </p>
+              )}
+
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] mb-2">
+                {bourbon.name}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-3 text-white/90">
+                {bourbon.proof && (
+                  <span className="text-base md:text-lg font-light">{bourbon.proof}° Proof</span>
+                )}
+                {bourbon.avgRating !== null && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    <span className="text-base md:text-lg font-medium">{bourbon.avgRating.toFixed(1)}/10</span>
+                    <span className="text-sm text-white/70">({bourbon.reviewCount} reviews)</span>
+                  </div>
+                )}
+              </div>
+
+              {(isAdmin || bourbon.createdById === session?.user?.id) && (
+                <div className="flex items-center gap-2 mt-4">
+                  <Link href={`/admin/bourbons/${bourbon.id}`}>
+                    <Button variant="secondary" size="sm">Edit</Button>
+                  </Link>
+                  <Button variant="secondary" size="sm" onClick={deleteBourbon}>Delete</Button>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">{bourbon.name}</h1>
-            {(isAdmin || bourbon.createdById === session?.user?.id) && (
-              <div className="flex items-center gap-2">
-                <Link href={`/admin/bourbons/${bourbon.id}`}>
-                  <Button variant="outline" size="sm">Edit</Button>
-                </Link>
-                <Button variant="outline" size="sm" onClick={deleteBourbon}>Delete</Button>
+
+          {/* Additional details below hero */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Details</CardTitle>
+              {(isAdmin || bourbon.createdById === session?.user?.id) && (
+                <div className="flex items-center gap-2">
+                  <Link href={`/admin/bourbons/${bourbon.id}`}>
+                    <Button variant="outline" size="sm">Edit</Button>
+                  </Link>
+                  <Button variant="outline" size="sm" onClick={deleteBourbon}>Delete</Button>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">{bourbon.type.replace("_", " ")}</Badge>
+                {bourbon.avgRating !== null && (
+                  <Badge variant="outline">{bourbon.avgRating.toFixed(1)}/10 ({bourbon.reviewCount} reviews)</Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                {bourbon.distillery && <><span className="text-muted-foreground">Distillery</span><span>{bourbon.distillery}</span></>}
+                {bourbon.proof && <><span className="text-muted-foreground">Proof</span><span>{bourbon.proof}°</span></>}
+                {bourbon.age && <><span className="text-muted-foreground">Age</span><span>{bourbon.age} years</span></>}
+                {bourbon.region && <><span className="text-muted-foreground">Region</span><span>{bourbon.region}</span></>}
+                {bourbon.price && <><span className="text-muted-foreground">Price</span><span className="font-semibold">${bourbon.price.toFixed(2)}</span></>}
+                {bourbon.cost && <><span className="text-muted-foreground">Cost</span><span>${bourbon.cost.toFixed(2)}</span></>}
+                {bourbon.secondaryCost && <><span className="text-muted-foreground">Secondary</span><span>${bourbon.secondaryCost.toFixed(2)}</span></>}
+              </div>
+              {bourbon.price && bourbon.price > 0 && bourbon.avgRating !== null && bourbon.reviewCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-600 text-white">
+                    Value Score: {((bourbon.avgRating / bourbon.price) * 10).toFixed(1)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">(rating per dollar)</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <div className="flex flex-col md:flex-row gap-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">{bourbon.name}</h1>
+              {(isAdmin || bourbon.createdById === session?.user?.id) && (
+                <div className="flex items-center gap-2">
+                  <Link href={`/admin/bourbons/${bourbon.id}`}>
+                    <Button variant="outline" size="sm">Edit</Button>
+                  </Link>
+                  <Button variant="outline" size="sm" onClick={deleteBourbon}>Delete</Button>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <Badge variant="secondary">{bourbon.type.replace("_", " ")}</Badge>
+              {bourbon.avgRating !== null && (
+                <Badge variant="outline">{bourbon.avgRating.toFixed(1)}/10 ({bourbon.reviewCount} reviews)</Badge>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1 mt-4 text-sm">
+              {bourbon.distillery && <><span className="text-muted-foreground">Distillery</span><span>{bourbon.distillery}</span></>}
+              {bourbon.proof && <><span className="text-muted-foreground">Proof</span><span>{bourbon.proof}°</span></>}
+              {bourbon.age && <><span className="text-muted-foreground">Age</span><span>{bourbon.age} years</span></>}
+              {bourbon.region && <><span className="text-muted-foreground">Region</span><span>{bourbon.region}</span></>}
+              {bourbon.price && <><span className="text-muted-foreground">Price</span><span className="font-semibold">${bourbon.price.toFixed(2)}</span></>}
+              {bourbon.cost && <><span className="text-muted-foreground">Cost</span><span>${bourbon.cost.toFixed(2)}</span></>}
+              {bourbon.secondaryCost && <><span className="text-muted-foreground">Secondary</span><span>${bourbon.secondaryCost.toFixed(2)}</span></>}
+            </div>
+            {bourbon.price && bourbon.price > 0 && bourbon.avgRating !== null && bourbon.reviewCount > 0 && (
+              <div className="mt-3 flex items-center gap-2">
+                <Badge className="bg-green-600 text-white">
+                  Value Score: {((bourbon.avgRating / bourbon.price) * 10).toFixed(1)}
+                </Badge>
+                <span className="text-xs text-muted-foreground">(rating per dollar)</span>
               </div>
             )}
           </div>
-          <div className="flex flex-wrap gap-2 mt-2">
-            <Badge variant="secondary">{bourbon.type.replace("_", " ")}</Badge>
-            {bourbon.avgRating !== null && (
-              <Badge variant="outline">{bourbon.avgRating.toFixed(1)}/10 ({bourbon.reviewCount} reviews)</Badge>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1 mt-4 text-sm">
-            {bourbon.distillery && <><span className="text-muted-foreground">Distillery</span><span>{bourbon.distillery}</span></>}
-            {bourbon.proof && <><span className="text-muted-foreground">Proof</span><span>{bourbon.proof}°</span></>}
-            {bourbon.age && <><span className="text-muted-foreground">Age</span><span>{bourbon.age} years</span></>}
-            {bourbon.region && <><span className="text-muted-foreground">Region</span><span>{bourbon.region}</span></>}
-            {bourbon.price && <><span className="text-muted-foreground">Price</span><span className="font-semibold">${bourbon.price.toFixed(2)}</span></>}
-            {bourbon.cost && <><span className="text-muted-foreground">Cost</span><span>${bourbon.cost.toFixed(2)}</span></>}
-            {bourbon.secondaryCost && <><span className="text-muted-foreground">Secondary</span><span>${bourbon.secondaryCost.toFixed(2)}</span></>}
-          </div>
-          {bourbon.price && bourbon.price > 0 && bourbon.avgRating !== null && bourbon.reviewCount > 0 && (
-            <div className="mt-3 flex items-center gap-2">
-              <Badge className="bg-green-600 text-white">
-                Value Score: {((bourbon.avgRating / bourbon.price) * 10).toFixed(1)}
-              </Badge>
-              <span className="text-xs text-muted-foreground">(rating per dollar)</span>
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Category Score Averages */}
       {bourbon.reviews.length > 0 && (
@@ -304,6 +404,27 @@ export default function BourbonDetailPage() {
             ))}
           </CardContent>
         </Card>
+      )}
+
+      {bourbon.reviews.length > 0 && bourbon.reviews.some(r => r.nose || r.palate || r.finish || r.notes || r.mouthfeel || r.appearanceNotes) && (
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Flavor Profile</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FlavorWheel reviews={bourbon.reviews} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Tasting Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WordCloud reviews={bourbon.reviews} />
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       <Card>
@@ -445,6 +566,7 @@ export default function BourbonDetailPage() {
                   {review.finish && <p className="text-sm"><span className="text-muted-foreground">Finish:</span> {review.finish}</p>}
                   {review.notes && <p className="text-sm"><span className="text-muted-foreground">Notes:</span> {review.notes}</p>}
                   <p className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
+                  <ReviewReactions reviewId={review.id} />
                 </>
               )}
             </div>

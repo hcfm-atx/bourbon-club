@@ -31,6 +31,7 @@ export default function WishlistPage() {
     distillery: "",
     notes: "",
   });
+  const [optimisticVotes, setOptimisticVotes] = useState<Map<string, { voted: boolean; count: number }>>(new Map());
 
   const fetchSuggestions = async () => {
     try {
@@ -66,7 +67,10 @@ export default function WishlistPage() {
       });
 
       if (res.ok) {
-        toast.success("Suggestion added successfully");
+        const newSuggestion = await res.json();
+        toast.success("Suggestion added successfully", {
+          description: `${formData.name} added to wishlist`
+        });
         setFormData({ name: "", distillery: "", notes: "" });
         setShowForm(false);
         fetchSuggestions();
@@ -86,18 +90,47 @@ export default function WishlistPage() {
   };
 
   const handleVote = async (suggestionId: string) => {
+    const suggestion = suggestions.find(s => s.id === suggestionId);
+    if (!suggestion) return;
+
+    const wasVoted = suggestion.userVoted;
+    const previousCount = suggestion.voteCount;
+    const newVoted = !wasVoted;
+    const newCount = wasVoted ? previousCount - 1 : previousCount + 1;
+
+    setOptimisticVotes(prev => new Map(prev).set(suggestionId, { voted: newVoted, count: newCount }));
+
     try {
       const res = await fetch(`/api/suggestions/${suggestionId}/vote`, {
         method: "POST",
       });
 
       if (res.ok) {
+        setOptimisticVotes(prev => {
+          const next = new Map(prev);
+          next.delete(suggestionId);
+          return next;
+        });
         fetchSuggestions();
       } else {
-        toast.error("Failed to vote");
+        setOptimisticVotes(prev => {
+          const next = new Map(prev);
+          next.delete(suggestionId);
+          return next;
+        });
+        toast.error("Failed to vote", {
+          action: { label: "Retry", onClick: () => handleVote(suggestionId) }
+        });
       }
     } catch (error) {
-      toast.error("Failed to vote");
+      setOptimisticVotes(prev => {
+        const next = new Map(prev);
+        next.delete(suggestionId);
+        return next;
+      });
+      toast.error("Failed to vote", {
+        action: { label: "Retry", onClick: () => handleVote(suggestionId) }
+      });
     }
   };
 
@@ -115,18 +148,18 @@ export default function WishlistPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Heart className="w-8 h-8 text-amber-600" />
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div className="flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <Heart className="w-6 h-6 md:w-8 md:h-8 text-amber-600" />
             Wishlist
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             Suggest bourbons for the club to try and vote on your favorites
           </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={() => setShowForm(!showForm)} className="w-full sm:w-auto min-h-[44px]">
           <Plus className="w-4 h-4 mr-2" />
           Add Suggestion
         </Button>
@@ -171,11 +204,11 @@ export default function WishlistPage() {
                   rows={3}
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={submitting}>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="submit" disabled={submitting} className="min-h-[44px]">
                   {submitting ? "Adding..." : "Add Suggestion"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="min-h-[44px]">
                   Cancel
                 </Button>
               </div>
@@ -209,11 +242,11 @@ export default function WishlistPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No suggestions yet</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-base md:text-lg font-semibold mb-2">No suggestions yet</h3>
+            <p className="text-sm md:text-base text-muted-foreground mb-4">
               Be the first to suggest a bourbon for the club to try
             </p>
-            <Button onClick={() => setShowForm(true)}>
+            <Button onClick={() => setShowForm(true)} className="min-h-[44px]">
               <Plus className="w-4 h-4 mr-2" />
               Add Suggestion
             </Button>
@@ -221,46 +254,52 @@ export default function WishlistPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {suggestions.map((suggestion) => (
-            <Card key={suggestion.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg leading-tight">{suggestion.name}</h3>
-                    {suggestion.distillery && (
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {suggestion.distillery}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                      <User className="w-3 h-3" />
-                      <span>Suggested by {suggestion.suggestedBy}</span>
-                      <span>•</span>
-                      <span>{getRelativeTime(suggestion.createdAt)}</span>
+          {suggestions.map((suggestion) => {
+            const optimistic = optimisticVotes.get(suggestion.id);
+            const displayVoted = optimistic ? optimistic.voted : suggestion.userVoted;
+            const displayCount = optimistic ? optimistic.count : suggestion.voteCount;
+
+            return (
+              <Card key={suggestion.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg leading-tight">{suggestion.name}</h3>
+                      {suggestion.distillery && (
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {suggestion.distillery}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <User className="w-3 h-3" />
+                        <span>Suggested by {suggestion.suggestedBy}</span>
+                        <span>•</span>
+                        <span>{getRelativeTime(suggestion.createdAt)}</span>
+                      </div>
+                      {suggestion.notes && (
+                        <p className="text-sm mt-3 text-muted-foreground">{suggestion.notes}</p>
+                      )}
                     </div>
-                    {suggestion.notes && (
-                      <p className="text-sm mt-3 text-muted-foreground">{suggestion.notes}</p>
-                    )}
+                    <div className="flex flex-col items-center gap-1 shrink-0">
+                      <Button
+                        size="sm"
+                        variant={displayVoted ? "default" : "outline"}
+                        onClick={() => handleVote(suggestion.id)}
+                        className="px-3"
+                      >
+                        <ThumbsUp
+                          className={`w-4 h-4 ${displayVoted ? "fill-current" : ""}`}
+                        />
+                      </Button>
+                      <Badge variant={displayCount > 0 ? "default" : "secondary"}>
+                        {displayCount}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center gap-1 shrink-0">
-                    <Button
-                      size="sm"
-                      variant={suggestion.userVoted ? "default" : "outline"}
-                      onClick={() => handleVote(suggestion.id)}
-                      className="px-3"
-                    >
-                      <ThumbsUp
-                        className={`w-4 h-4 ${suggestion.userVoted ? "fill-current" : ""}`}
-                      />
-                    </Button>
-                    <Badge variant={suggestion.voteCount > 0 ? "default" : "secondary"}>
-                      {suggestion.voteCount}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

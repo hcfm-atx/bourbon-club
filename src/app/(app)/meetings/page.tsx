@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
-import { Check, HelpCircle, X, CalendarDays } from "lucide-react";
+import { Check, HelpCircle, X, CalendarDays, Clock } from "lucide-react";
 
 type RsvpStatus = "GOING" | "MAYBE" | "NOT_GOING";
 
@@ -85,16 +85,16 @@ export default function MeetingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Meetings</h1>
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-2xl md:text-3xl font-bold">Meetings</h1>
 
       <MeetingCalendar meetings={meetings} />
 
       {upcoming.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-xl font-semibold">Upcoming</h2>
-          {upcoming.map((meeting) => (
-            <MeetingCard key={meeting.id} meeting={meeting} userId={session?.user?.id} />
+          {upcoming.map((meeting, index) => (
+            <MeetingCard key={meeting.id} meeting={meeting} userId={session?.user?.id} isNext={index === 0} />
           ))}
         </div>
       )}
@@ -202,15 +202,49 @@ function MeetingCalendar({ meetings }: { meetings: Meeting[] }) {
   );
 }
 
-function MeetingCard({ meeting, userId }: { meeting: Meeting; userId?: string }) {
+function MeetingCountdown({ meeting }: { meeting: Meeting }) {
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0 });
+
+  useEffect(() => {
+    const calculateCountdown = () => {
+      const now = new Date().getTime();
+      const meetingDate = new Date(meeting.date).getTime();
+      const diff = meetingDate - now;
+
+      if (diff > 0) {
+        setCountdown({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        });
+      }
+    };
+
+    calculateCountdown();
+    const interval = setInterval(calculateCountdown, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [meeting.date]);
+
+  return (
+    <div className="flex items-center gap-2 text-amber-600">
+      <Clock className="w-4 h-4" />
+      <span className="text-sm font-medium">
+        {countdown.days}d {countdown.hours}h {countdown.minutes}m until meeting
+      </span>
+    </div>
+  );
+}
+
+function MeetingCard({ meeting, userId, isNext }: { meeting: Meeting; userId?: string; isNext?: boolean }) {
   const myRsvp = meeting.rsvps.find((r) => r.user.id === userId);
   const goingCount = meeting.rsvps.filter((r) => r.status === "GOING").length;
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg">{meeting.title}</CardTitle>
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
+          <CardTitle className="text-base md:text-lg">{meeting.title}</CardTitle>
           {myRsvp && (
             <Badge variant={myRsvp.status === "GOING" ? "default" : "outline"} className="ml-2">
               {myRsvp.status === "GOING" && <Check className="w-3 h-3 mr-1" />}
@@ -228,6 +262,7 @@ function MeetingCard({ meeting, userId }: { meeting: Meeting; userId?: string })
           {new Date(meeting.date).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "long", month: "long", day: "numeric", year: "numeric" })}
           {meeting.location && ` \u2014 ${meeting.location}`}
         </p>
+        {isNext && <div className="mt-2"><MeetingCountdown meeting={meeting} /></div>}
         {meeting.bourbons.length > 0 && (
           <p className="text-sm text-muted-foreground mt-1">
             Bourbons: {meeting.bourbons.map((b) => b.bourbon.name).join(", ")}
@@ -238,8 +273,8 @@ function MeetingCard({ meeting, userId }: { meeting: Meeting; userId?: string })
             {goingCount} {goingCount === 1 ? "person" : "people"} going
           </p>
         )}
-        <Link href={`/meetings/${meeting.id}`} className="mt-3 inline-block">
-          <Button variant="outline" size="sm">View Details</Button>
+        <Link href={`/meetings/${meeting.id}`} className="mt-3 inline-block w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto min-h-[44px]">View Details</Button>
         </Link>
       </CardContent>
     </Card>
