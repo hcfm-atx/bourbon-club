@@ -104,21 +104,24 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // Handle club switch trigger
-      if (trigger === "update" && token.id) {
+      // Refresh user data from DB on every request (handles admin changes without sign-out)
+      if (!user && token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id },
-          select: { currentClubId: true, systemRole: true },
+          select: { name: true, currentClubId: true, systemRole: true },
         });
-        token.systemRole = dbUser?.systemRole || "USER";
-        token.currentClubId = dbUser?.currentClubId || null;
-        if (token.currentClubId) {
-          const membership = await prisma.clubMember.findUnique({
-            where: { userId_clubId: { userId: token.id, clubId: token.currentClubId } },
-          });
-          token.clubRole = membership?.role || null;
-        } else {
-          token.clubRole = null;
+        if (dbUser) {
+          token.name = dbUser.name;
+          token.systemRole = dbUser.systemRole || "USER";
+          token.currentClubId = dbUser.currentClubId || null;
+          if (token.currentClubId) {
+            const membership = await prisma.clubMember.findUnique({
+              where: { userId_clubId: { userId: token.id, clubId: token.currentClubId } },
+            });
+            token.clubRole = membership?.role || null;
+          } else {
+            token.clubRole = null;
+          }
         }
       }
 
