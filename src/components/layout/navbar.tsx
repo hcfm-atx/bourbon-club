@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import {
   LayoutDashboard, CalendarDays, Vote, GlassWater, Star, CreditCard,
-  Users, Wallet, Settings, Menu, Moon, Sun,
+  Users, Wallet, Settings, Menu, Moon, Sun, Trophy,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +25,7 @@ const memberLinks: NavLink[] = [
   { href: "/polls", label: "Polls", icon: Vote },
   { href: "/bourbons", label: "Bourbons", icon: GlassWater },
   { href: "/ratings", label: "Ratings", icon: Star },
+  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/payments", label: "Payments", icon: CreditCard },
 ];
 

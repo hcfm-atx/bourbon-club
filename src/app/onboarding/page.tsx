@@ -65,19 +65,25 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-2xl space-y-6">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Welcome to Bourbon Club</CardTitle>
-            <CardDescription>
-              Join an existing club or create your own to get started.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="w-full max-w-2xl space-y-8">
+        {/* Brand Header */}
+        <div className="text-center space-y-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Bourbon Club" width={100} height={100} className="mx-auto" />
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-light tracking-tight leading-none">
+              Welcome to Bourbon Club
+            </h1>
+            <div className="w-16 h-px bg-primary/30 mx-auto my-6" />
+            <p className="text-lg text-muted-foreground font-light">
+              Track tastings. Compare ratings. Manage your club.
+            </p>
+          </div>
+        </div>
 
         {clubs.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold">Join a Club</h2>
+          <div className="space-y-4">
+            <h2 className="text-xl font-light tracking-tight">Join a Club</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {clubs.map((club) => (
                 <Card
@@ -116,7 +122,7 @@ export default function OnboardingPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">
+            <CardTitle className="text-lg font-light tracking-tight">
               {clubs.length > 0 ? "Or Create Your Own" : "Create a Club"}
             </CardTitle>
             <CardDescription>Start a new bourbon club and invite your friends.</CardDescription>
@@ -126,6 +132,7 @@ export default function OnboardingPage() {
               placeholder="Club name"
               value={newClubName}
               onChange={(e) => setNewClubName(e.target.value)}
+              className="h-12"
             />
           </CardContent>
         </Card>
@@ -133,7 +140,7 @@ export default function OnboardingPage() {
         <Button
           onClick={handleComplete}
           disabled={!canSubmit || saving}
-          className="w-full"
+          className="w-full h-12 tracking-widest uppercase text-xs"
           size="lg"
         >
           {saving ? "Setting up..." : "Get Started"}
