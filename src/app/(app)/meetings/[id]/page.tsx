@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,7 +150,9 @@ function BourbonReviewSection({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-lg">{meetingBourbon.bourbon.name}</CardTitle>
+          <Link href={`/bourbons/${meetingBourbon.bourbon.id}`} className="hover:underline">
+            <CardTitle className="text-lg">{meetingBourbon.bourbon.name}</CardTitle>
+          </Link>
           <p className="text-sm text-muted-foreground">
             {meetingBourbon.bourbon.distillery}
             {meetingBourbon.bourbon.proof && ` — ${meetingBourbon.bourbon.proof}°`}

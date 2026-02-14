@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ function getDateKey(dateStr: string) {
 }
 
 export default function MeetingsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const [meetings, setMeetings] = useState<Meeting[]>([]);
 
   useEffect(() => {
@@ -53,7 +56,16 @@ export default function MeetingsPage() {
         </div>
       )}
 
-      {meetings.length === 0 && <p className="text-muted-foreground">No meetings scheduled.</p>}
+      {meetings.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No meetings scheduled yet.</p>
+          {isAdmin && (
+            <Link href="/admin/meetings" className="mt-3 inline-block">
+              <Button className="mt-3">Schedule a Meeting</Button>
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

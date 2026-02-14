@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Star } from "lucide-react";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const BOURBON_TYPES = ["BOURBON", "RYE", "WHEAT", "SINGLE_MALT", "BLEND", "OTHER"];
@@ -258,6 +259,12 @@ export default function BourbonsPage() {
                   fill
                   className="object-cover rounded-t-lg"
                 />
+                {bourbon.avgRating !== null && (
+                  <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                    {bourbon.avgRating.toFixed(1)}
+                  </div>
+                )}
               </div>
             )}
             <CardHeader>

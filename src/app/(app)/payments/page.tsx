@@ -51,9 +51,27 @@ export default function PaymentsPage() {
         `https://paypal.me/${settings.paypalEmail}/${amount}`
     : null;
 
+  const unpaid = myPayments.filter(({ payment }) => !payment?.paid);
+  const totalUnpaid = unpaid.reduce((sum, { period }) => sum + period.amount, 0);
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Payments</h1>
+
+      {unpaid.length > 0 && (
+        <Card className="border-l-4 border-l-amber-600 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Outstanding Balance</p>
+                <p className="text-2xl font-bold">${totalUnpaid.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">{unpaid.length} unpaid {unpaid.length === 1 ? "period" : "periods"}</p>
+              </div>
+              <Badge variant="secondary" className="text-amber-700 dark:text-amber-400">Action Needed</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

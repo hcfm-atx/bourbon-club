@@ -64,6 +64,7 @@ export default function RatingsPage() {
     fetch(`/api/ratings?${params}`).then((r) => r.json()).then((res) => {
       setData(res.bourbons || []);
       setFilterOptions(res.filterOptions || { distilleries: [], types: [], regions: [] });
+      setCompareIds(new Set());
     });
   }, [distillery, type, region]);
 
