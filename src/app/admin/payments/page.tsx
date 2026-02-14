@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Payment {
   id: string;
@@ -27,6 +28,7 @@ interface DuesPeriod {
 export default function AdminPaymentsPage() {
   const [periods, setPeriods] = useState<DuesPeriod[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   useEffect(() => {
     fetch("/api/dues-periods").then((r) => r.json()).then((data) => {
@@ -55,7 +57,13 @@ export default function AdminPaymentsPage() {
   };
 
   const deletePeriod = async (id: string) => {
-    if (!confirm("Delete this dues period and all its payments?")) return;
+    const ok = await confirmDialog({
+      title: "Delete Dues Period",
+      description: "Delete this dues period and all its payments?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/dues-periods/${id}`, { method: "DELETE" });
     if (res.ok) {
       setPeriods((prev) => prev.filter((p) => p.id !== id));
@@ -143,6 +151,7 @@ export default function AdminPaymentsPage() {
           )}
         </>
       )}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const BOURBON_TYPES = ["BOURBON", "RYE", "WHEAT", "SINGLE_MALT", "BLEND", "OTHER"];
 
@@ -53,13 +55,15 @@ export default function BourbonsPage() {
   });
   const [suggestions, setSuggestions] = useState<CatalogEntry[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   const loadBourbons = () => {
     fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
   };
 
   const deleteBourbon = async (id: string) => {
-    if (!confirm("Delete this bourbon? This cannot be undone.")) return;
+    const ok = await confirmDialog({ title: "Delete Bourbon", description: "Delete this bourbon? This cannot be undone.", confirmLabel: "Delete", destructive: true });
+    if (!ok) return;
     const res = await fetch(`/api/bourbons/${id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Bourbon deleted");
@@ -152,85 +156,83 @@ export default function BourbonsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Bourbons</h1>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancel" : "Add Bourbon"}
-        </Button>
+        <Button onClick={() => setShowForm(true)}>Add Bourbon</Button>
       </div>
 
-      {showForm && (
-        <Card>
-          <CardHeader><CardTitle>Add Bourbon</CardTitle></CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2 relative">
-                <Label>Name</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => {
-                    update("name", e.target.value);
-                    searchCatalog(e.target.value);
-                    setShowSuggestions(true);
-                  }}
-                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  placeholder="Start typing to search..."
-                  required
-                  autoComplete="off"
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowSuggestions(false)} />
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-md z-50 max-h-64 overflow-y-auto">
-                      {suggestions.map((s) => (
-                        <button
-                          key={s.name}
-                          type="button"
-                          onClick={() => selectSuggestion(s)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex justify-between items-center"
-                        >
-                          <div>
-                            <span className="font-medium">{s.name}</span>
-                            {s.distillery && <span className="text-muted-foreground ml-2">— {s.distillery}</span>}
-                          </div>
-                          <div className="text-xs text-muted-foreground shrink-0 ml-2">
-                            {s.proof && `${s.proof}°`}
-                            {s.type && ` · ${s.type.replace("_", " ")}`}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Bourbon</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2 relative">
+              <Label>Name</Label>
+              <Input
+                value={form.name}
+                onChange={(e) => {
+                  update("name", e.target.value);
+                  searchCatalog(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                placeholder="Start typing to search..."
+                required
+                autoComplete="off"
+              />
+              {showSuggestions && suggestions.length > 0 && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowSuggestions(false)} />
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-md z-50 max-h-64 overflow-y-auto">
+                    {suggestions.map((s) => (
+                      <button
+                        key={s.name}
+                        type="button"
+                        onClick={() => selectSuggestion(s)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex justify-between items-center"
+                      >
+                        <div>
+                          <span className="font-medium">{s.name}</span>
+                          {s.distillery && <span className="text-muted-foreground ml-2">— {s.distillery}</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground shrink-0 ml-2">
+                          {s.proof && `${s.proof}°`}
+                          {s.type && ` · ${s.type.replace("_", " ")}`}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Distillery</Label>
+              <Input value={form.distillery} onChange={(e) => update("distillery", e.target.value)} placeholder="Buffalo Trace Distillery" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Proof</Label>
+                <Input type="number" step="0.1" value={form.proof} onChange={(e) => update("proof", e.target.value)} placeholder="90" />
               </div>
               <div className="space-y-2">
-                <Label>Distillery</Label>
-                <Input value={form.distillery} onChange={(e) => update("distillery", e.target.value)} placeholder="Buffalo Trace Distillery" />
+                <Label>Type</Label>
+                <Select value={form.type} onValueChange={(v) => update("type", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {BOURBON_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t.replace("_", " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Proof</Label>
-                  <Input type="number" step="0.1" value={form.proof} onChange={(e) => update("proof", e.target.value)} placeholder="90" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select value={form.type} onValueChange={(v) => update("type", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {BOURBON_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>{t.replace("_", " ")}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Image</Label>
-                <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
-              </div>
-              <Button type="submit" disabled={saving}>{saving ? "Adding..." : "Add Bourbon"}</Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+            <div className="space-y-2">
+              <Label>Image</Label>
+              <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+            </div>
+            <Button type="submit" disabled={saving} className="w-full">{saving ? "Adding..." : "Add Bourbon"}</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Input
         placeholder="Search by name or distillery..."
@@ -317,6 +319,7 @@ export default function BourbonsPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

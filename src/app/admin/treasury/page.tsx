@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Expense {
   id: string;
@@ -46,6 +47,7 @@ export default function AdminTreasuryPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -119,7 +121,13 @@ export default function AdminTreasuryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this expense?")) return;
+    const ok = await confirmDialog({
+      title: "Delete Expense",
+      description: "Delete this expense?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Expense deleted");
@@ -260,6 +268,7 @@ export default function AdminTreasuryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

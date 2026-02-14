@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Meeting {
   id: string;
@@ -16,13 +17,20 @@ interface Meeting {
 
 export default function AdminMeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   useEffect(() => {
     fetch("/api/meetings").then((r) => r.json()).then(setMeetings);
   }, []);
 
   const deleteMeeting = async (id: string) => {
-    if (!confirm("Delete this meeting?")) return;
+    const ok = await confirmDialog({
+      title: "Delete Meeting",
+      description: "Delete this meeting?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/meetings/${id}`, { method: "DELETE" });
     if (res.ok) {
       setMeetings((prev) => prev.filter((m) => m.id !== id));
@@ -65,6 +73,7 @@ export default function AdminMeetingsPage() {
         ))}
         {meetings.length === 0 && <p className="text-muted-foreground">No meetings yet.</p>}
       </div>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

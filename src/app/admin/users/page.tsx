@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Club {
   id: string;
@@ -32,6 +33,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [addingClub, setAddingClub] = useState<{ userId: string; clubId: string; role: string } | null>(null);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
 
@@ -61,7 +63,13 @@ export default function AdminUsersPage() {
   };
 
   const removeFromClub = async (userId: string, clubId: string, clubName: string) => {
-    if (!confirm(`Remove user from ${clubName}?`)) return;
+    const ok = await confirmDialog({
+      title: "Remove from Club",
+      description: `Remove user from ${clubName}?`,
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/admin/users/${userId}/memberships`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -76,7 +84,13 @@ export default function AdminUsersPage() {
   };
 
   const deleteUser = async (userId: string, email: string) => {
-    if (!confirm(`Permanently delete ${email}? This cannot be undone.`)) return;
+    const ok = await confirmDialog({
+      title: "Delete User",
+      description: `Permanently delete ${email}? This cannot be undone.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch("/api/admin/users", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -243,6 +257,7 @@ export default function AdminUsersPage() {
           </Table>
         </CardContent>
       </Card>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

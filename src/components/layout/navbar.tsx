@@ -1,29 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
+import {
+  LayoutDashboard, CalendarDays, Vote, GlassWater, Star, CreditCard,
+  Users, Wallet, Settings, Menu,
+  type LucideIcon,
+} from "lucide-react";
 
-const memberLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/meetings", label: "Meetings" },
-  { href: "/polls", label: "Polls" },
-  { href: "/bourbons", label: "Bourbons" },
-  { href: "/ratings", label: "Ratings" },
-  { href: "/payments", label: "Payments" },
+interface NavLink {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+}
+
+const memberLinks: NavLink[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/meetings", label: "Meetings", icon: CalendarDays },
+  { href: "/polls", label: "Polls", icon: Vote },
+  { href: "/bourbons", label: "Bourbons", icon: GlassWater },
+  { href: "/ratings", label: "Ratings", icon: Star },
+  { href: "/payments", label: "Payments", icon: CreditCard },
 ];
 
-const adminLinks = [
-  { href: "/admin/members", label: "Members" },
-  { href: "/admin/meetings", label: "Meetings" },
-  { href: "/admin/polls", label: "Polls" },
-  { href: "/admin/bourbons", label: "Bourbons" },
-  { href: "/admin/payments", label: "Dues" },
-  { href: "/admin/treasury", label: "Treasury" },
-  { href: "/admin/settings", label: "Settings" },
+const adminLinks: NavLink[] = [
+  { href: "/admin/members", label: "Members", icon: Users },
+  { href: "/admin/meetings", label: "Meetings", icon: CalendarDays },
+  { href: "/admin/polls", label: "Polls", icon: Vote },
+  { href: "/admin/bourbons", label: "Bourbons", icon: GlassWater },
+  { href: "/admin/payments", label: "Dues", icon: CreditCard },
+  { href: "/admin/treasury", label: "Treasury", icon: Wallet },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 interface Club {
@@ -34,6 +45,7 @@ interface Club {
 export function Navbar() {
   const { data: session, update } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [clubMenuOpen, setClubMenuOpen] = useState(false);
@@ -51,8 +63,8 @@ export function Navbar() {
   if (!session) return null;
 
   const currentClub = clubs.find((c) => c.id === session.user.currentClubId) || clubs[0] || null;
-  const superAdminLinks = isSuperAdmin
-    ? [{ href: "/admin/users", label: "Users" }, { href: "/admin/clubs", label: "Clubs" }]
+  const superAdminLinks: NavLink[] = isSuperAdmin
+    ? [{ href: "/admin/users", label: "Users", icon: Users }, { href: "/admin/clubs", label: "Clubs" }]
     : [];
   const links = pathname.startsWith("/admin") ? [...adminLinks, ...superAdminLinks] : memberLinks;
 
@@ -66,7 +78,7 @@ export function Navbar() {
     await update(); // Refresh the JWT/session
     setClubMenuOpen(false);
     setSwitching(false);
-    window.location.reload();
+    router.refresh();
   };
 
   return (
@@ -112,12 +124,13 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
                   pathname === link.href || pathname.startsWith(link.href + "/")
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
               >
+                {link.icon && <link.icon className="w-4 h-4 shrink-0" />}
                 {link.label}
               </Link>
             ))}
@@ -145,7 +158,7 @@ export function Navbar() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="sm">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              <Menu className="w-5 h-5" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64">

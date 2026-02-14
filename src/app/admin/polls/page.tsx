@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Poll {
   id: string;
@@ -18,13 +19,20 @@ interface Poll {
 
 export default function AdminPollsPage() {
   const [polls, setPolls] = useState<Poll[]>([]);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   useEffect(() => {
     fetch("/api/polls").then((r) => r.json()).then(setPolls);
   }, []);
 
   const deletePoll = async (id: string) => {
-    if (!confirm("Delete this poll?")) return;
+    const ok = await confirmDialog({
+      title: "Delete Poll",
+      description: "Delete this poll?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/polls/${id}`, { method: "DELETE" });
     if (res.ok) {
       setPolls((prev) => prev.filter((p) => p.id !== id));
@@ -62,6 +70,7 @@ export default function AdminPollsPage() {
         ))}
         {polls.length === 0 && <p className="text-muted-foreground">No polls yet.</p>}
       </div>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

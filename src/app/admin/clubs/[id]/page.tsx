@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ClubMember {
   id: string;
@@ -45,6 +46,7 @@ export default function AdminClubDetailPage() {
   const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState<"MEMBER" | "ADMIN">("MEMBER");
   const [saving, setSaving] = useState(false);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   const loadClub = () => {
     fetch(`/api/clubs/${id}`).then((r) => r.json()).then((data) => {
@@ -101,7 +103,13 @@ export default function AdminClubDetailPage() {
   };
 
   const removeMember = async (userId: string, memberName: string) => {
-    if (!confirm(`Remove ${memberName} from ${club.name}?`)) return;
+    const ok = await confirmDialog({
+      title: "Remove Member",
+      description: `Remove ${memberName} from ${club.name}?`,
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/clubs/${id}/members`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -287,6 +295,7 @@ export default function AdminClubDetailPage() {
           </CardContent>
         </Card>
       )}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

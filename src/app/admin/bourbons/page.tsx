@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Bourbon {
   id: string;
@@ -21,13 +22,20 @@ interface Bourbon {
 
 export default function AdminBourbonsPage() {
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   useEffect(() => {
     fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
   }, []);
 
   const deleteBourbon = async (id: string) => {
-    if (!confirm("Delete this bourbon?")) return;
+    const ok = await confirmDialog({
+      title: "Delete Bourbon",
+      description: "Delete this bourbon?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/bourbons/${id}`, { method: "DELETE" });
     if (res.ok) {
       setBourbons((prev) => prev.filter((b) => b.id !== id));
@@ -81,6 +89,7 @@ export default function AdminBourbonsPage() {
         ))}
         {bourbons.length === 0 && <p className="text-muted-foreground">No bourbons yet.</p>}
       </div>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

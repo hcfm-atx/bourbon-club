@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface BourbonInfo {
   id: string;
@@ -38,6 +39,7 @@ export default function AdminPollDetailPage() {
   const router = useRouter();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [notifying, setNotifying] = useState(false);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   useEffect(() => {
     fetch(`/api/polls/${id}`).then((r) => r.json()).then(setPoll);
@@ -59,7 +61,13 @@ export default function AdminPollDetailPage() {
     const message = poll?.type === "BOURBON"
       ? "Close this poll and create a meeting with the selected bourbon?"
       : "Close this poll and create a meeting for the selected date?";
-    if (!confirm(message)) return;
+    const ok = await confirmDialog({
+      title: "Close Poll",
+      description: message,
+      confirmLabel: "Close & Create Meeting",
+      destructive: false,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/polls/${id}/close`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -124,6 +132,7 @@ export default function AdminPollDetailPage() {
           </Card>
         ))}
       </div>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

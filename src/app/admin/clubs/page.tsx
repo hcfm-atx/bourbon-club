@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Club {
   id: string;
@@ -30,6 +31,7 @@ export default function AdminClubsPage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
 
@@ -66,7 +68,13 @@ export default function AdminClubsPage() {
   };
 
   const deleteClub = async (id: string, clubName: string) => {
-    if (!confirm(`Delete "${clubName}"? This will delete all data for this club.`)) return;
+    const ok = await confirmDialog({
+      title: "Delete Club",
+      description: `Delete "${clubName}"? This will delete all data for this club.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/clubs/${id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Club deleted");
@@ -141,6 +149,7 @@ export default function AdminClubsPage() {
       {clubs.length === 0 && (
         <p className="text-muted-foreground">No clubs yet. Create one to get started.</p>
       )}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

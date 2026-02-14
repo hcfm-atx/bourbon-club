@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { ChevronLeft } from "lucide-react";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Review {
   id: string;
@@ -72,9 +74,11 @@ export default function BourbonDetailPage() {
   const [editNotes, setEditNotes] = useState({ appearance: "", nose: "", taste: "", mouthfeel: "", finish: "", general: "" });
 
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
+  const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   const deleteBourbon = async () => {
-    if (!confirm("Delete this bourbon? This cannot be undone.")) return;
+    const ok = await confirmDialog({ title: "Delete Bourbon", description: "Delete this bourbon? This cannot be undone.", confirmLabel: "Delete", destructive: true });
+    if (!ok) return;
     const res = await fetch(`/api/bourbons/${id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Bourbon deleted");
@@ -90,7 +94,18 @@ export default function BourbonDetailPage() {
 
   useEffect(() => { loadBourbon(); }, [id]);
 
-  if (!bourbon) return <p>Loading...</p>;
+  if (!bourbon) return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="w-full md:w-64 h-64 bg-muted animate-pulse rounded-lg shrink-0" />
+        <div className="space-y-3 flex-1">
+          <div className="h-8 w-64 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+        </div>
+      </div>
+    </div>
+  );
 
   const myReview = bourbon.reviews.find((r) => r.user.id === session?.user?.id);
   const overallScore = Object.values(scores).reduce((a, b) => a + b, 0) / 5;
@@ -176,7 +191,8 @@ export default function BourbonDetailPage() {
   };
 
   const deleteReview = async (reviewId: string) => {
-    if (!confirm("Delete this review?")) return;
+    const ok = await confirmDialog({ title: "Delete Review", description: "Delete this review?", confirmLabel: "Delete", destructive: true });
+    if (!ok) return;
     const res = await fetch(`/api/reviews/${reviewId}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Review deleted");
@@ -195,6 +211,9 @@ export default function BourbonDetailPage() {
 
   return (
     <div className="space-y-6">
+      <Link href="/bourbons" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 w-fit">
+        <ChevronLeft className="w-4 h-4" /> Back to Bourbons
+      </Link>
       <div className="flex flex-col md:flex-row gap-6">
         {bourbon.imageUrl && (
           <div
@@ -395,6 +414,7 @@ export default function BourbonDetailPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

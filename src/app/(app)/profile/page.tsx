@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ interface JoinableClub {
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
+  const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [smsOptIn, setSmsOptIn] = useState(false);
@@ -120,7 +122,7 @@ export default function ProfilePage() {
     });
     await update();
     setSwitching(null);
-    window.location.reload();
+    router.refresh();
   };
 
   const joinClub = async (clubId: string) => {
