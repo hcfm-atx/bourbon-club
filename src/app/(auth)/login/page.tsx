@@ -47,30 +47,45 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block mb-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.svg" alt="Bourbon Club" width={80} height={80} className="mx-auto" />
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden p-6">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1612] via-[#2e2720] to-[#1a1612] -z-10" />
+
+      {/* Subtle overlay pattern */}
+      <div className="absolute inset-0 opacity-5 -z-10"
+           style={{
+             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+           }}
+      />
+
+      <div className="w-full max-w-md relative">
+        <div className="text-center mb-12">
+          <Link href="/" className="inline-block mb-8">
+            <h1 className="text-5xl md:text-6xl font-display font-bold text-[#fbbf24] tracking-tight">
+              HOOTCH CLUB
+            </h1>
           </Link>
-          <h1 className="text-3xl font-light tracking-tight">Bourbon Club</h1>
-          <p className="text-sm text-muted-foreground mt-2">Sign in to continue</p>
+          <p className="text-xl text-[#fef3c7] font-light tracking-wide mb-2">
+            Curate. Taste. Celebrate.
+          </p>
+          <p className="text-sm text-muted-foreground">Sign in to continue</p>
         </div>
         {submitted ? (
-          <div className="text-center border border-border rounded-lg p-8">
-            <p className="text-muted-foreground leading-relaxed">
+          <div className="text-center border border-[#3d342b] bg-[#241f1a]/80 backdrop-blur-sm rounded-lg p-8 shadow-2xl">
+            <p className="text-[#f5f0e8] leading-relaxed">
               Check your email for a sign-in link.
             </p>
           </div>
         ) : (
           <>
-            <div className="flex border border-border rounded-lg overflow-hidden mb-5">
+            <div className="flex border border-[#3d342b] rounded-lg overflow-hidden mb-6 shadow-lg">
               <button
                 type="button"
                 onClick={() => { setMode("magic-link"); setError(""); }}
-                className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${
-                  mode === "magic-link" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                className={`flex-1 py-3 text-xs tracking-widest uppercase transition-all duration-200 font-medium ${
+                  mode === "magic-link"
+                    ? "bg-[#d97706] text-white shadow-inner"
+                    : "text-[#a8a29e] hover:text-[#f5f0e8] hover:bg-[#2e2720]"
                 }`}
               >
                 Magic Link
@@ -78,17 +93,19 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => { setMode("password"); setError(""); }}
-                className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${
-                  mode === "password" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                className={`flex-1 py-3 text-xs tracking-widest uppercase transition-all duration-200 font-medium ${
+                  mode === "password"
+                    ? "bg-[#d97706] text-white shadow-inner"
+                    : "text-[#a8a29e] hover:text-[#f5f0e8] hover:bg-[#2e2720]"
                 }`}
               >
                 Password
               </button>
             </div>
 
-            <form onSubmit={mode === "magic-link" ? handleMagicLink : handlePassword} className="space-y-5">
+            <form onSubmit={mode === "magic-link" ? handleMagicLink : handlePassword} className="space-y-6 bg-[#241f1a]/80 backdrop-blur-sm border border-[#3d342b] rounded-lg p-8 shadow-2xl">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs tracking-widest uppercase text-muted-foreground">Email</Label>
+                <Label htmlFor="email" className="text-xs tracking-widest uppercase text-[#a8a29e] font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -96,12 +113,12 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12"
+                  className="h-12 bg-[#1a1612] border-[#3d342b] text-[#f5f0e8] placeholder:text-[#78716c] focus:border-[#d97706] focus:ring-[#d97706]"
                 />
               </div>
               {mode === "password" && (
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-xs tracking-widest uppercase text-muted-foreground">Password</Label>
+                  <Label htmlFor="password" className="text-xs tracking-widest uppercase text-[#a8a29e] font-medium">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -109,14 +126,14 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12"
+                    className="h-12 bg-[#1a1612] border-[#3d342b] text-[#f5f0e8] placeholder:text-[#78716c] focus:border-[#d97706] focus:ring-[#d97706]"
                   />
                 </div>
               )}
               {error && (
-                <p className="text-sm text-destructive">{error}</p>
+                <p className="text-sm text-red-400">{error}</p>
               )}
-              <Button type="submit" className="w-full h-12 tracking-widest uppercase text-xs" disabled={loading}>
+              <Button type="submit" className="w-full h-12 tracking-widest uppercase text-xs font-semibold bg-[#d97706] hover:bg-[#b45309] text-white shadow-lg transition-all duration-200 hover:shadow-xl" disabled={loading}>
                 {loading
                   ? (mode === "magic-link" ? "Sending..." : "Signing in...")
                   : (mode === "magic-link" ? "Send Magic Link" : "Sign In")}
@@ -125,7 +142,7 @@ export default function LoginPage() {
           </>
         )}
         <p className="text-center mt-8">
-          <Link href="/" className="text-xs tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/" className="text-xs tracking-widest uppercase text-[#a8a29e] hover:text-[#fbbf24] transition-colors duration-200">
             &larr; Back
           </Link>
         </p>

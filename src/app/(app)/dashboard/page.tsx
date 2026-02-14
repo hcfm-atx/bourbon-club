@@ -119,21 +119,21 @@ export default async function DashboardPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-          <p className="text-amber-400 text-xs tracking-widest uppercase font-medium mb-1">
+          <p className="text-amber-400 text-xs tracking-widest uppercase font-semibold mb-1">
             Welcome back
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
             {session?.user?.name || "Member"}
           </h1>
-          <p className="text-white/60 text-sm mt-1">Your bourbon club at a glance</p>
+          <p className="text-white/70 text-sm md:text-base mt-2 font-medium">Your bourbon club at a glance</p>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-4">
         <Link href="/meetings">
-          <Card className="hover:shadow-md transition-shadow border-l-4 border-l-amber-600">
+          <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-l-4 border-l-amber-600">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Next Meeting</CardTitle>
-              <CalendarDays className="w-4 h-4 text-amber-600" />
+              <CalendarDays className="w-5 h-5 text-amber-600" />
             </CardHeader>
             <CardContent>
               {nextMeeting ? (
@@ -150,10 +150,10 @@ export default async function DashboardPage() {
           </Card>
         </Link>
         <Link href="/polls">
-          <Card className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+          <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-l-4 border-l-blue-500">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Open Polls</CardTitle>
-              <Vote className="w-4 h-4 text-blue-500" />
+              <Vote className="w-5 h-5 text-blue-500" />
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">{openPolls}</p>
@@ -162,10 +162,10 @@ export default async function DashboardPage() {
           </Card>
         </Link>
         <Link href="/ratings">
-          <Card className="hover:shadow-md transition-shadow border-l-4 border-l-purple-500">
+          <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-l-4 border-l-purple-500">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Your Reviews</CardTitle>
-              <Star className="w-4 h-4 text-purple-500" />
+              <Star className="w-5 h-5 text-purple-500" />
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">{reviewCount}</p>
@@ -173,10 +173,10 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Card className="border-l-4 border-l-green-600">
+        <Card className="hover:-translate-y-0.5 transition-all duration-200 border-l-4 border-l-green-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Treasury Balance</CardTitle>
-            <Wallet className="w-4 h-4 text-green-600" />
+            <Wallet className="w-5 h-5 text-green-600" />
           </CardHeader>
           <CardContent>
             <p className={`text-3xl font-bold ${balance >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -202,7 +202,7 @@ export default async function DashboardPage() {
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
             {bourbonsWithImages.map((b) => (
               <Link key={b.id} href={`/bourbons/${b.id}`}>
-                <Card className="hover:shadow-md transition-shadow overflow-hidden">
+                <Card className="hover:shadow-md hover:scale-[1.02] transition-transform duration-200 overflow-hidden">
                   <div className="relative h-48 w-full">
                     <Image
                       src={b.imageUrl!}

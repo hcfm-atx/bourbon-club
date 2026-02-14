@@ -7,7 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface BourbonInfo {
   id: string;
@@ -85,10 +88,43 @@ export default function PollVotePage() {
     setSaving(false);
   };
 
-  if (!poll) return <p>Loading...</p>;
+  if (!poll) {
+    return (
+      <div className="max-w-lg mx-auto space-y-6">
+        <Link href="/polls" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Polls
+        </Link>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-5 w-16" />
+        </div>
+        <div className="grid gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-5 w-5" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
+      <Link href="/polls" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+        <ArrowLeft className="w-4 h-4" />
+        Back to Polls
+      </Link>
       <div className="flex items-center gap-3">
         <h1 className="text-3xl font-bold">{poll.title}</h1>
         <Badge variant={poll.status === "OPEN" ? "default" : "secondary"}>{poll.status}</Badge>

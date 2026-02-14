@@ -11,6 +11,9 @@ import { RatingBarChart } from "@/components/ratings/rating-bar-chart";
 import { RatingScatterPlot } from "@/components/ratings/rating-scatter-plot";
 import { RatingRadarChart } from "@/components/ratings/rating-radar-chart";
 import { MemberHistory } from "@/components/ratings/member-history";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
+import { Star, Wine } from "lucide-react";
 
 interface BourbonRating {
   id: string;
@@ -48,6 +51,7 @@ interface FilterOptions {
 export default function RatingsPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<BourbonRating[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ distilleries: [], types: [], regions: [] });
   const [distillery, setDistillery] = useState<string>("");
   const [type, setType] = useState<string>("");
@@ -56,16 +60,20 @@ export default function RatingsPage() {
   const [scatterAxis, setScatterAxis] = useState<"cost" | "proof">("cost");
 
   useEffect(() => {
+    setLoading(true);
     const params = new URLSearchParams();
     if (distillery) params.set("distillery", distillery);
     if (type) params.set("type", type);
     if (region) params.set("region", region);
 
-    fetch(`/api/ratings?${params}`).then((r) => r.json()).then((res) => {
-      setData(res.bourbons || []);
-      setFilterOptions(res.filterOptions || { distilleries: [], types: [], regions: [] });
-      setCompareIds(new Set());
-    });
+    fetch(`/api/ratings?${params}`)
+      .then((r) => r.json())
+      .then((res) => {
+        setData(res.bourbons || []);
+        setFilterOptions(res.filterOptions || { distilleries: [], types: [], regions: [] });
+        setCompareIds(new Set());
+      })
+      .finally(() => setLoading(false));
   }, [distillery, type, region]);
 
   const [myData, setMyData] = useState<BourbonRating[]>([]);
@@ -143,56 +151,102 @@ export default function RatingsPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader><CardTitle>Top Rated Bourbons</CardTitle></CardHeader>
-            <CardContent>
-              <RatingBarChart data={data} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Rating vs {scatterAxis === "cost" ? "Cost" : "Proof"}</CardTitle>
-                <Select value={scatterAxis} onValueChange={(v) => setScatterAxis(v as "cost" | "proof")}>
-                  <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cost">Cost</SelectItem>
-                    <SelectItem value="proof">Proof</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <RatingScatterPlot data={data} xAxis={scatterAxis} />
-            </CardContent>
-          </Card>
+          {loading ? (
+            <>
+              <Card>
+                <CardHeader><CardTitle>Top Rated Bourbons</CardTitle></CardHeader>
+                <CardContent>
+                  <Skeleton className="h-64 w-full" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Rating vs Cost</CardTitle></CardHeader>
+                <CardContent>
+                  <Skeleton className="h-64 w-full" />
+                </CardContent>
+              </Card>
+            </>
+          ) : data.length === 0 ? (
+            <EmptyState
+              icon={Star}
+              title="No reviews yet"
+              description="Start reviewing bourbons to see ratings and analytics here."
+            />
+          ) : (
+            <>
+              <Card>
+                <CardHeader><CardTitle>Top Rated Bourbons</CardTitle></CardHeader>
+                <CardContent>
+                  <RatingBarChart data={data} />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Rating vs {scatterAxis === "cost" ? "Cost" : "Proof"}</CardTitle>
+                    <Select value={scatterAxis} onValueChange={(v) => setScatterAxis(v as "cost" | "proof")}>
+                      <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cost">Cost</SelectItem>
+                        <SelectItem value="proof">Proof</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <RatingScatterPlot data={data} xAxis={scatterAxis} />
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="compare" className="space-y-6">
-          <Card>
-            <CardHeader><CardTitle>Select Bourbons to Compare (up to 4)</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid gap-2 md:grid-cols-2">
-                {data.map((b) => (
-                  <div key={b.id} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={compareIds.has(b.id)}
-                      onCheckedChange={() => toggleCompare(b.id)}
-                      disabled={!compareIds.has(b.id) && compareIds.size >= 4}
-                    />
-                    <span className="text-sm">{b.name} ({b.avgRating.toFixed(1)})</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          {compareBourbons.length > 0 && (
+          {loading ? (
             <Card>
-              <CardHeader><CardTitle>Comparison</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Select Bourbons to Compare (up to 4)</CardTitle></CardHeader>
               <CardContent>
-                <RatingRadarChart bourbons={compareBourbons} />
+                <div className="grid gap-2 md:grid-cols-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-6 w-full" />
+                  ))}
+                </div>
               </CardContent>
             </Card>
+          ) : data.length === 0 ? (
+            <EmptyState
+              icon={Wine}
+              title="No bourbons to compare"
+              description="Add some bourbon reviews to enable comparison features."
+            />
+          ) : (
+            <>
+              <Card>
+                <CardHeader><CardTitle>Select Bourbons to Compare (up to 4)</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {data.map((b) => (
+                      <div key={b.id} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={compareIds.has(b.id)}
+                          onCheckedChange={() => toggleCompare(b.id)}
+                          disabled={!compareIds.has(b.id) && compareIds.size >= 4}
+                        />
+                        <span className="text-sm">{b.name} ({b.avgRating.toFixed(1)})</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              {compareBourbons.length > 0 && (
+                <Card>
+                  <CardHeader><CardTitle>Comparison</CardTitle></CardHeader>
+                  <CardContent>
+                    <RatingRadarChart bourbons={compareBourbons} />
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </TabsContent>
 
@@ -222,7 +276,13 @@ export default function RatingsPage() {
                     </div>
                   ))
                 )}
-                {myData.length === 0 && <p className="text-muted-foreground">No reviews yet.</p>}
+                {myData.length === 0 && (
+                  <EmptyState
+                    icon={Star}
+                    title="No reviews yet"
+                    description="You haven't reviewed any bourbons yet. Attend a meeting or browse bourbons to leave your first review."
+                  />
+                )}
               </div>
             </CardContent>
           </Card>

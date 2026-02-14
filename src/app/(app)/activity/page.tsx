@@ -3,7 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getClubId } from "@/lib/session";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, Vote, CreditCard } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { Star, Vote, CreditCard, Activity } from "lucide-react";
 
 export default async function ActivityPage() {
   const session = await getServerSession(authOptions);
@@ -95,7 +96,11 @@ export default async function ActivityPage() {
       <h1 className="text-3xl font-bold">Club Activity</h1>
 
       {events.length === 0 ? (
-        <p className="text-muted-foreground">No activity yet.</p>
+        <EmptyState
+          icon={Activity}
+          title="No activity yet"
+          description="When members review bourbons, vote on polls, or pay dues, activity will appear here."
+        />
       ) : (
         <Card>
           <CardContent className="p-6">

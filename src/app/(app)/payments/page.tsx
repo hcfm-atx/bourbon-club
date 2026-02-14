@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
+import { CreditCard } from "lucide-react";
 
 interface DuesPeriod {
   id: string;
@@ -29,11 +32,18 @@ interface AppSettings {
 export default function PaymentsPage() {
   const { data: session } = useSession();
   const [periods, setPeriods] = useState<DuesPeriod[]>([]);
+  const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<AppSettings>({ venmoHandle: null, paypalEmail: null });
 
   useEffect(() => {
-    fetch("/api/dues-periods").then((r) => r.json()).then(setPeriods);
-    fetch("/api/settings").then((r) => r.json()).then(setSettings);
+    Promise.all([
+      fetch("/api/dues-periods").then((r) => r.json()),
+      fetch("/api/settings").then((r) => r.json()),
+    ]).then(([periodsData, settingsData]) => {
+      setPeriods(periodsData);
+      setSettings(settingsData);
+      setLoading(false);
+    });
   }, []);
 
   const myPayments = periods.map((period) => {
@@ -53,6 +63,26 @@ export default function PaymentsPage() {
 
   const unpaid = myPayments.filter(({ payment }) => !payment?.paid);
   const totalUnpaid = unpaid.reduce((sum, { period }) => sum + period.amount, 0);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Payments</h1>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -119,7 +149,15 @@ export default function PaymentsPage() {
               ))}
             </TableBody>
           </Table>
-          {myPayments.length === 0 && <p className="text-muted-foreground mt-4">No dues periods.</p>}
+          {myPayments.length === 0 && (
+            <div className="mt-4">
+              <EmptyState
+                icon={CreditCard}
+                title="No payments recorded"
+                description="There are no dues periods set up yet. Contact an admin for more information."
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

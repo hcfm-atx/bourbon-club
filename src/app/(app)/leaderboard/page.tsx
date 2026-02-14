@@ -140,7 +140,7 @@ export default async function LeaderboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Trophy className="w-8 h-8 text-amber-500" />
+        <Trophy className="w-10 h-10 text-amber-500" />
         <h1 className="text-3xl font-bold">Leaderboard</h1>
       </div>
 
@@ -148,7 +148,7 @@ export default async function LeaderboardPage() {
         {/* Most Reviews Written */}
         <Card className="border-l-4 border-l-purple-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-semibold text-2xl">
               <Star className="w-5 h-5 text-purple-500" />
               Most Active Reviewers
             </CardTitle>
@@ -157,20 +157,20 @@ export default async function LeaderboardPage() {
             {topReviewers.length > 0 ? (
               <div className="space-y-3">
                 {topReviewers.map((member, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+                  <div key={idx} className="flex items-center justify-between hover:bg-muted/50 -mx-3 px-3 py-2 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        className={`flex items-center justify-center ${
                           idx === 0
-                            ? "bg-amber-500 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 1
-                            ? "bg-gray-400 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 2
-                            ? "bg-amber-700 text-white"
-                            : "bg-muted text-muted-foreground"
+                            ? "w-10 h-10 text-2xl"
+                            : "w-8 h-8 rounded-full font-bold text-sm bg-muted text-muted-foreground"
                         }`}
                       >
-                        {idx + 1}
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                       </div>
                       <span className="font-medium">{member.name}</span>
                     </div>
@@ -187,7 +187,7 @@ export default async function LeaderboardPage() {
         {/* Most Generous Reviewers */}
         <Card className="border-l-4 border-l-green-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-semibold text-2xl">
               <ThumbsUp className="w-5 h-5 text-green-500" />
               Most Generous Reviewers
             </CardTitle>
@@ -196,20 +196,20 @@ export default async function LeaderboardPage() {
             {mostGenerous.length > 0 ? (
               <div className="space-y-3">
                 {mostGenerous.map((member, idx) => (
-                  <div key={member.userId} className="flex items-center justify-between">
+                  <div key={member.userId} className="flex items-center justify-between hover:bg-muted/50 -mx-3 px-3 py-2 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        className={`flex items-center justify-center ${
                           idx === 0
-                            ? "bg-amber-500 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 1
-                            ? "bg-gray-400 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 2
-                            ? "bg-amber-700 text-white"
-                            : "bg-muted text-muted-foreground"
+                            ? "w-10 h-10 text-2xl"
+                            : "w-8 h-8 rounded-full font-bold text-sm bg-muted text-muted-foreground"
                         }`}
                       >
-                        {idx + 1}
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                       </div>
                       <span className="font-medium">{member.name}</span>
                     </div>
@@ -229,7 +229,7 @@ export default async function LeaderboardPage() {
         {/* Harshest Critics */}
         <Card className="border-l-4 border-l-red-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-semibold text-2xl">
               <ThumbsDown className="w-5 h-5 text-red-500" />
               Harshest Critics
             </CardTitle>
@@ -238,20 +238,20 @@ export default async function LeaderboardPage() {
             {harshestCritics.length > 0 ? (
               <div className="space-y-3">
                 {harshestCritics.map((member, idx) => (
-                  <div key={member.userId} className="flex items-center justify-between">
+                  <div key={member.userId} className="flex items-center justify-between hover:bg-muted/50 -mx-3 px-3 py-2 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        className={`flex items-center justify-center ${
                           idx === 0
-                            ? "bg-amber-500 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 1
-                            ? "bg-gray-400 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 2
-                            ? "bg-amber-700 text-white"
-                            : "bg-muted text-muted-foreground"
+                            ? "w-10 h-10 text-2xl"
+                            : "w-8 h-8 rounded-full font-bold text-sm bg-muted text-muted-foreground"
                         }`}
                       >
-                        {idx + 1}
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                       </div>
                       <span className="font-medium">{member.name}</span>
                     </div>
@@ -271,7 +271,7 @@ export default async function LeaderboardPage() {
         {/* Top-Rated Bourbons */}
         <Card className="border-l-4 border-l-amber-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-semibold text-2xl">
               <Award className="w-5 h-5 text-amber-500" />
               Top-Rated Bourbons
             </CardTitle>
@@ -280,20 +280,20 @@ export default async function LeaderboardPage() {
             {topRatedBourbons.length > 0 ? (
               <div className="space-y-3">
                 {topRatedBourbons.map((bourbon, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+                  <div key={idx} className="flex items-center justify-between hover:bg-muted/50 -mx-3 px-3 py-2 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        className={`flex items-center justify-center ${
                           idx === 0
-                            ? "bg-amber-500 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 1
-                            ? "bg-gray-400 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 2
-                            ? "bg-amber-700 text-white"
-                            : "bg-muted text-muted-foreground"
+                            ? "w-10 h-10 text-2xl"
+                            : "w-8 h-8 rounded-full font-bold text-sm bg-muted text-muted-foreground"
                         }`}
                       >
-                        {idx + 1}
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                       </div>
                       <div>
                         <p className="font-medium">{bourbon.name}</p>
@@ -318,7 +318,7 @@ export default async function LeaderboardPage() {
         {/* Best Value Bourbons */}
         <Card className="border-l-4 border-l-green-500 md:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-semibold text-2xl">
               <DollarSign className="w-5 h-5 text-green-500" />
               Best Value
             </CardTitle>
@@ -327,20 +327,20 @@ export default async function LeaderboardPage() {
             {valueScoreData.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {valueScoreData.map((bourbon, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+                  <div key={idx} className="flex items-center justify-between hover:bg-muted/50 -mx-3 px-3 py-2 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        className={`flex items-center justify-center ${
                           idx === 0
-                            ? "bg-amber-500 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 1
-                            ? "bg-gray-400 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 2
-                            ? "bg-amber-700 text-white"
-                            : "bg-muted text-muted-foreground"
+                            ? "w-10 h-10 text-2xl"
+                            : "w-8 h-8 rounded-full font-bold text-sm bg-muted text-muted-foreground"
                         }`}
                       >
-                        {idx + 1}
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                       </div>
                       <div>
                         <p className="font-medium">{bourbon.name}</p>
@@ -365,7 +365,7 @@ export default async function LeaderboardPage() {
         {/* Most Reviewed Bourbons */}
         <Card className="border-l-4 border-l-blue-500 md:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-semibold text-2xl">
               <GlassWater className="w-5 h-5 text-blue-500" />
               Most Reviewed Bourbons
             </CardTitle>
@@ -374,20 +374,20 @@ export default async function LeaderboardPage() {
             {mostReviewedBourbons.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {mostReviewedBourbons.map((bourbon, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+                  <div key={idx} className="flex items-center justify-between hover:bg-muted/50 -mx-3 px-3 py-2 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        className={`flex items-center justify-center ${
                           idx === 0
-                            ? "bg-amber-500 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 1
-                            ? "bg-gray-400 text-white"
+                            ? "w-10 h-10 text-2xl"
                             : idx === 2
-                            ? "bg-amber-700 text-white"
-                            : "bg-muted text-muted-foreground"
+                            ? "w-10 h-10 text-2xl"
+                            : "w-8 h-8 rounded-full font-bold text-sm bg-muted text-muted-foreground"
                         }`}
                       >
-                        {idx + 1}
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                       </div>
                       <div>
                         <p className="font-medium">{bourbon.name}</p>

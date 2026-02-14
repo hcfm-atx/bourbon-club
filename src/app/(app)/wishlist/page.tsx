@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, Plus, ThumbsUp, User } from "lucide-react";
 import { toast } from "sonner";
 
@@ -180,7 +181,26 @@ export default function WishlistPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-16 w-full mt-3" />
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <Skeleton className="h-8 w-12" />
+                    <Skeleton className="h-5 w-8" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : suggestions.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">

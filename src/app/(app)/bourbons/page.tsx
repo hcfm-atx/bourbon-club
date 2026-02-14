@@ -12,8 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
 import { toast } from "sonner";
-import { Star } from "lucide-react";
+import { Star, Wine } from "lucide-react";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const BOURBON_TYPES = ["BOURBON", "RYE", "WHEAT", "SINGLE_MALT", "BLEND", "OTHER"];
@@ -47,6 +49,7 @@ export default function BourbonsPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const [bourbons, setBourbons] = useState<Bourbon[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -60,7 +63,10 @@ export default function BourbonsPage() {
   const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   const loadBourbons = () => {
-    fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
+    fetch("/api/bourbons")
+      .then((r) => r.json())
+      .then(setBourbons)
+      .finally(() => setLoading(false));
   };
 
   const deleteBourbon = async (id: string) => {
@@ -251,8 +257,43 @@ export default function BourbonsPage() {
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
       />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((bourbon) => (
+
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <Skeleton className="h-48 w-full rounded-t-lg" />
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-1/2" />
+                <div className="flex items-center gap-2 mt-2">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filtered.length === 0 && search ? (
+        <EmptyState
+          icon={Wine}
+          title="No bourbons found"
+          description={`No bourbons match your search "${search}". Try a different search term.`}
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={Wine}
+          title="No bourbons in the collection"
+          description="Start building your bourbon collection by adding your first bottle."
+          actionLabel="Add Bourbon"
+          onAction={() => setShowForm(true)}
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((bourbon) => (
           <Card
             key={bourbon.id}
             className="hover:shadow-md transition-shadow h-full cursor-pointer"
@@ -323,9 +364,9 @@ export default function BourbonsPage() {
               </div>
             )}
           </Card>
-        ))}
-      </div>
-      {filtered.length === 0 && <p className="text-muted-foreground">No bourbons found.</p>}
+          ))}
+        </div>
+      )}
 
       {previewImage && (
         <div

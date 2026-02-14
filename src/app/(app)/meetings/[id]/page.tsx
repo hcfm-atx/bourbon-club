@@ -11,8 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Sparkles, Check, HelpCircle, X, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { Sparkles, Check, HelpCircle, X, ChevronDown, ChevronUp, Download, ArrowLeft, Star } from "lucide-react";
 import { generateMeetingPdf } from "@/lib/meeting-pdf";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
 
 const CATEGORIES = [
   { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs" },
@@ -104,10 +106,50 @@ export default function MeetingDetailPage() {
     }
   };
 
-  if (!meeting) return <p>Loading...</p>;
+  if (!meeting) {
+    return (
+      <div className="space-y-6">
+        <Link href="/meetings" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Meetings
+        </Link>
+        <div>
+          <Skeleton className="h-9 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+          <Skeleton className="h-4 w-full max-w-xl mt-2" />
+          <div className="flex gap-2 mt-4">
+            <Skeleton className="h-10 w-44" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-24" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <Link href="/meetings" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+        <ArrowLeft className="w-4 h-4" />
+        Back to Meetings
+      </Link>
       <div>
         <h1 className="text-3xl font-bold">{meeting.title}</h1>
         <p className="text-muted-foreground">

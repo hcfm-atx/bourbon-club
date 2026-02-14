@@ -179,57 +179,78 @@ export function Navbar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64">
-            <div className="flex flex-col gap-1 mt-8">
+            <div className="flex flex-col gap-1.5 mt-8">
               {clubs.length > 1 && (
                 <>
-                  <p className="px-3 text-xs text-muted-foreground font-medium uppercase">Switch Club</p>
+                  <p className="px-3 text-xs text-muted-foreground font-medium uppercase tracking-wide">Switch Club</p>
                   {clubs.map((club) => (
                     <button
                       key={club.id}
                       onClick={() => { switchClub(club.id); setOpen(false); }}
-                      className={`px-3 py-2 rounded-md text-sm font-medium text-left transition-colors ${
+                      className={`px-3 py-3 rounded-md text-sm font-medium text-left transition-colors min-h-[44px] ${
                         club.id === session.user.currentClubId
                           ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
                       }`}
                     >
                       {club.name}
                     </button>
                   ))}
-                  <hr className="my-2" />
+                  <hr className="my-3" />
                 </>
               )}
-              {links.map((link) => (
+              <p className="px-3 text-xs text-muted-foreground font-medium uppercase tracking-wide">Main</p>
+              {links.slice(0, pathname.startsWith("/admin") ? -2 : 5).map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-3 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] ${
                     pathname === link.href || pathname.startsWith(link.href + "/")
                       ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
                 >
+                  {link.icon && <link.icon className="w-4 h-4 shrink-0" />}
                   {link.label}
                 </Link>
               ))}
-              <hr className="my-2" />
+              <hr className="my-3" />
+              <p className="px-3 text-xs text-muted-foreground font-medium uppercase tracking-wide">Club</p>
+              {links.slice(pathname.startsWith("/admin") ? -2 : 5).map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className={`px-3 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] ${
+                    pathname === link.href || pathname.startsWith(link.href + "/")
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
+                >
+                  {link.icon && <link.icon className="w-4 h-4 shrink-0" />}
+                  {link.label}
+                </Link>
+              ))}
+              <hr className="my-3" />
               {isAdmin && (
                 <Link
                   href={pathname.startsWith("/admin") ? "/dashboard" : "/admin/members"}
                   onClick={() => setOpen(false)}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground"
+                  className="px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-2 min-h-[44px]"
                 >
+                  <Settings className="w-4 h-4 shrink-0" />
                   {pathname.startsWith("/admin") ? "Member View" : "Admin Panel"}
                 </Link>
               )}
-              <Link href="/profile" onClick={() => setOpen(false)} className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground">
+              <Link href="/profile" onClick={() => setOpen(false)} className="px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-2 min-h-[44px]">
+                <Users className="w-4 h-4 shrink-0" />
                 Profile
               </Link>
               {mounted && (
                 <button
                   onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground text-left flex items-center gap-2"
+                  className="px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent text-left flex items-center gap-2 min-h-[44px]"
                 >
                   {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                   {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
@@ -237,7 +258,7 @@ export function Navbar() {
               )}
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground text-left"
+                className="px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent text-left min-h-[44px]"
               >
                 Sign Out
               </button>

@@ -6,7 +6,9 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, HelpCircle, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
+import { Check, HelpCircle, X, CalendarDays } from "lucide-react";
 
 type RsvpStatus = "GOING" | "MAYBE" | "NOT_GOING";
 
@@ -34,14 +36,53 @@ export default function MeetingsPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/meetings").then((r) => r.json()).then(setMeetings);
+    fetch("/api/meetings")
+      .then((r) => r.json())
+      .then(setMeetings)
+      .finally(() => setLoading(false));
   }, []);
 
   const nowKey = new Date().toISOString().split("T")[0];
   const upcoming = meetings.filter((m) => m.date.split("T")[0] >= nowKey);
   const past = meetings.filter((m) => m.date.split("T")[0] < nowKey);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Meetings</h1>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between py-3">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-8 w-16" />
+          </CardHeader>
+          <CardContent className="px-2 pb-3">
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-9 w-32 mt-3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -68,14 +109,13 @@ export default function MeetingsPage() {
       )}
 
       {meetings.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No meetings scheduled yet.</p>
-          {isAdmin && (
-            <Link href="/admin/meetings" className="mt-3 inline-block">
-              <Button className="mt-3">Schedule a Meeting</Button>
-            </Link>
-          )}
-        </div>
+        <EmptyState
+          icon={CalendarDays}
+          title="No meetings scheduled"
+          description="There are no upcoming or past meetings at the moment. Check back soon or contact an admin to schedule one."
+          actionLabel={isAdmin ? "Schedule a Meeting" : undefined}
+          actionHref={isAdmin ? "/admin/meetings" : undefined}
+        />
       )}
     </div>
   );

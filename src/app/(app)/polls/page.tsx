@@ -5,7 +5,10 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
 import { useSession } from "next-auth/react";
+import { Vote } from "lucide-react";
 
 interface Poll {
   id: string;
@@ -18,10 +21,43 @@ interface Poll {
 export default function PollsPage() {
   const { data: session } = useSession();
   const [polls, setPolls] = useState<Poll[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/polls").then((r) => r.json()).then(setPolls);
+    fetch("/api/polls")
+      .then((r) => r.json())
+      .then(setPolls)
+      .finally(() => setLoading(false));
   }, []);
+
+  const isAdmin = session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN";
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Polls</h1>
+        <div className="grid gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-9 w-24" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -59,14 +95,13 @@ export default function PollsPage() {
           </Card>
         ))}
         {polls.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No polls available yet.</p>
-            {(session?.user?.clubRole === "ADMIN" || session?.user?.systemRole === "SUPER_ADMIN") && (
-              <Link href="/admin/polls">
-                <Button className="mt-3">Create a Poll</Button>
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            icon={Vote}
+            title="No polls yet"
+            description="There are no polls available at the moment. Check back soon or contact an admin to create one."
+            actionLabel={isAdmin ? "Create a Poll" : undefined}
+            actionHref={isAdmin ? "/admin/polls" : undefined}
+          />
         )}
       </div>
     </div>

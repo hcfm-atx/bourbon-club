@@ -166,9 +166,28 @@ export default function ProfilePage() {
   const myClubIds = new Set(myClubs.map((c) => c.id));
   const availableClubs = joinableClubs.filter((c) => !myClubIds.has(c.id));
 
+  const getUserInitials = (name: string | null | undefined, email: string | null | undefined) => {
+    if (name && name.trim()) {
+      return name.trim()[0].toUpperCase();
+    }
+    if (email) {
+      return email[0].toUpperCase();
+    }
+    return "?";
+  };
+
+  const initials = getUserInitials(session?.user?.name, session?.user?.email);
+
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
+
+      <div className="flex justify-center mb-6">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+          {initials}
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Your Information</CardTitle>
@@ -212,52 +231,56 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Your Clubs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {myClubs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">You&apos;re not a member of any clubs yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {myClubs.map((club) => {
-                const isActive = club.id === session?.user?.currentClubId;
-                return (
-                  <div
-                    key={club.id}
-                    className={`flex items-center justify-between border rounded-md p-3 ${
-                      isActive ? "border-primary bg-accent" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{club.name}</span>
-                      {club.myRole && (
-                        <Badge variant={club.myRole === "ADMIN" ? "default" : "secondary"}>
-                          {club.myRole}
-                        </Badge>
-                      )}
-                      {isActive && (
-                        <Badge variant="outline">Active</Badge>
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-3">Your Clubs</h2>
+        {myClubs.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">You&apos;re not a member of any clubs yet.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {myClubs.map((club) => {
+              const isActive = club.id === session?.user?.currentClubId;
+              return (
+                <Card
+                  key={club.id}
+                  className={`transition-all hover:shadow-md ${
+                    isActive ? "border-2 border-primary shadow-sm" : ""
+                  }`}
+                >
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{club.name}</span>
+                        {club.myRole && (
+                          <Badge variant={club.myRole === "ADMIN" ? "default" : "secondary"}>
+                            {club.myRole}
+                          </Badge>
+                        )}
+                        {isActive && (
+                          <Badge variant="outline" className="border-primary text-primary">Active</Badge>
+                        )}
+                      </div>
+                      {!isActive && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={switching === club.id}
+                          onClick={() => switchClub(club.id)}
+                        >
+                          {switching === club.id ? "Switching..." : "Switch"}
+                        </Button>
                       )}
                     </div>
-                    {!isActive && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={switching === club.id}
-                        onClick={() => switchClub(club.id)}
-                      >
-                        {switching === club.id ? "Switching..." : "Switch"}
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {availableClubs.length > 0 && (
         <Card className="mt-6">

@@ -12,8 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Star } from "lucide-react";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
 
 interface Review {
   id: string;
@@ -97,14 +99,35 @@ export default function BourbonDetailPage() {
 
   if (!bourbon) return (
     <div className="space-y-6">
+      <Link href="/bourbons" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+        <ChevronLeft className="w-4 h-4" />
+        Back to Bourbons
+      </Link>
       <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-64 h-64 bg-muted animate-pulse rounded-lg shrink-0" />
+        <Skeleton className="w-full md:w-64 h-64 rounded-lg shrink-0" />
         <div className="space-y-3 flex-1">
-          <div className="h-8 w-64 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-48 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-4 w-32" />
+          <div className="flex gap-2 mt-4">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-5 w-24" />
+          </div>
         </div>
       </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -406,7 +429,15 @@ export default function BourbonDetailPage() {
               )}
             </div>
           ))}
-          {bourbon.reviews.length === 0 && !showForm && <p className="text-muted-foreground">No reviews yet.</p>}
+          {bourbon.reviews.length === 0 && !showForm && (
+            <EmptyState
+              icon={Star}
+              title="No reviews yet"
+              description="Be the first to review this bourbon and share your tasting notes with the club."
+              actionLabel="Write a Review"
+              onAction={() => setShowForm(true)}
+            />
+          )}
         </CardContent>
       </Card>
       {previewImage && bourbon.imageUrl && (
