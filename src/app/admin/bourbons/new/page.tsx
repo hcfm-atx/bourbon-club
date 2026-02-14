@@ -21,6 +21,7 @@ export default function NewBourbonPage() {
     proof: "",
     cost: "",
     secondaryCost: "",
+    price: "",
     type: "BOURBON",
     region: "",
     age: "",
@@ -53,6 +54,7 @@ export default function NewBourbonPage() {
         proof: form.proof ? parseFloat(form.proof) : null,
         cost: form.cost ? parseFloat(form.cost) : null,
         secondaryCost: form.secondaryCost ? parseFloat(form.secondaryCost) : null,
+        price: form.price ? parseFloat(form.price) : null,
         type: form.type,
         region: form.region || null,
         age: form.age ? parseInt(form.age) : null,
@@ -104,6 +106,10 @@ export default function NewBourbonPage() {
                 <Label>Secondary Cost ($)</Label>
                 <Input type="number" step="0.01" value={form.secondaryCost} onChange={(e) => update("secondaryCost", e.target.value)} placeholder="49.99" />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Price ($)</Label>
+              <Input type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="Retail price for Value Score calculation" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

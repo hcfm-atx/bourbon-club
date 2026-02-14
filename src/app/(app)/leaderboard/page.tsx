@@ -3,7 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getClubId } from "@/lib/session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Star, ThumbsUp, ThumbsDown, GlassWater, Award } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trophy, Star, ThumbsUp, ThumbsDown, GlassWater, Award, DollarSign } from "lucide-react";
 
 export default async function LeaderboardPage() {
   const session = await getServerSession(authOptions);
@@ -103,6 +104,38 @@ export default async function LeaderboardPage() {
 
   // Most reviewed bourbon
   const mostReviewedBourbons = bourbonData.sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 5);
+
+  // Fetch bourbons with prices for Value Score calculation
+  const bourbonsWithPrices = await prisma.bourbon.findMany({
+    where: { clubId, price: { gt: 0 } },
+    select: {
+      id: true,
+      name: true,
+      distillery: true,
+      price: true,
+      reviews: { select: { rating: true } },
+    },
+  });
+
+  // Calculate Value Score (avgRating / price * 10)
+  const valueScoreData = bourbonsWithPrices
+    .map((b) => {
+      const avgRating = b.reviews.length > 0
+        ? b.reviews.reduce((sum, r) => sum + r.rating, 0) / b.reviews.length
+        : null;
+      const valueScore = avgRating && b.price ? (avgRating / b.price) * 10 : null;
+      return {
+        name: b.name,
+        distillery: b.distillery,
+        price: b.price!,
+        avgRating,
+        reviewCount: b.reviews.length,
+        valueScore,
+      };
+    })
+    .filter((b) => b.valueScore !== null && b.reviewCount >= 2) // At least 2 reviews
+    .sort((a, b) => b.valueScore! - a.valueScore!)
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -278,6 +311,53 @@ export default async function LeaderboardPage() {
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">Need at least 2 reviews per bourbon.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Best Value Bourbons */}
+        <Card className="border-l-4 border-l-green-500 md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-green-500" />
+              Best Value
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {valueScoreData.length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {valueScoreData.map((bourbon, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                          idx === 0
+                            ? "bg-amber-500 text-white"
+                            : idx === 1
+                            ? "bg-gray-400 text-white"
+                            : idx === 2
+                            ? "bg-amber-700 text-white"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium">{bourbon.name}</p>
+                        {bourbon.distillery && (
+                          <p className="text-xs text-muted-foreground">{bourbon.distillery}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-green-600">{bourbon.valueScore!.toFixed(1)}</p>
+                      <p className="text-xs text-muted-foreground">${bourbon.price.toFixed(2)} • {bourbon.avgRating!.toFixed(1)}/10</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Need bourbons with prices and at least 2 reviews.</p>
             )}
           </CardContent>
         </Card>

@@ -24,6 +24,7 @@ interface Bourbon {
   distillery: string | null;
   type: string;
   proof: number | null;
+  price: number | null;
   imageUrl: string | null;
   avgRating: number | null;
   reviewCount: number;
@@ -52,7 +53,7 @@ export default function BourbonsPage() {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [form, setForm] = useState({
-    name: "", distillery: "", proof: "", type: "BOURBON",
+    name: "", distillery: "", proof: "", price: "", type: "BOURBON",
   });
   const [suggestions, setSuggestions] = useState<CatalogEntry[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -102,6 +103,7 @@ export default function BourbonsPage() {
       name: entry.name,
       distillery: entry.distillery || "",
       proof: entry.proof ? String(entry.proof) : "",
+      price: "",
       type: entry.type,
     });
     setSuggestions([]);
@@ -131,6 +133,7 @@ export default function BourbonsPage() {
         name: form.name,
         distillery: form.distillery || null,
         proof: form.proof ? parseFloat(form.proof) : null,
+        price: form.price ? parseFloat(form.price) : null,
         type: form.type,
         imageUrl,
       }),
@@ -138,7 +141,7 @@ export default function BourbonsPage() {
     if (res.ok) {
       toast.success("Bourbon added");
       setShowForm(false);
-      setForm({ name: "", distillery: "", proof: "", type: "BOURBON" });
+      setForm({ name: "", distillery: "", proof: "", price: "", type: "BOURBON" });
       setImageFile(null);
       loadBourbons();
     } else {
@@ -227,6 +230,13 @@ export default function BourbonsPage() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label>Price (Optional)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <Input type="number" step="0.01" min="0" value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="45.00" className="pl-7" />
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label>Image</Label>
               <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
             </div>
@@ -275,10 +285,16 @@ export default function BourbonsPage() {
                 {bourbon.distillery || "Unknown distillery"}
                 {bourbon.proof && ` — ${bourbon.proof}°`}
               </p>
+              {bourbon.price && (
+                <p className="text-sm font-medium mt-1">${bourbon.price.toFixed(2)}</p>
+              )}
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="secondary">{bourbon.type.replace("_", " ")}</Badge>
                 {bourbon.avgRating !== null && (
                   <Badge variant="outline">{bourbon.avgRating.toFixed(1)}/10 ({bourbon.reviewCount})</Badge>
+                )}
+                {bourbon.price && bourbon.price > 0 && bourbon.avgRating !== null && bourbon.reviewCount > 0 && (
+                  <Badge className="bg-green-600">Value: {((bourbon.avgRating / bourbon.price) * 10).toFixed(1)}</Badge>
                 )}
                 {bourbon.purchased && <Badge className="bg-amber-600">Purchased</Badge>}
               </div>

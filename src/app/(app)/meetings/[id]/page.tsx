@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Check, HelpCircle, X, ChevronDown, ChevronUp } from "lucide-react";
 
 const CATEGORIES = [
   { key: "appearance", scoreKey: "appearanceScore", notesKey: "appearanceNotes", label: "Appearance", desc: "Color, clarity, legs" },
@@ -53,17 +53,40 @@ interface Meeting {
   bourbons: MeetingBourbon[];
 }
 
+type RsvpStatus = "GOING" | "MAYBE" | "NOT_GOING";
+
+interface Rsvp {
+  id: string;
+  status: RsvpStatus;
+  user: { id: string; name: string | null; email: string };
+}
+
 export default function MeetingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: session } = useSession();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
+  const [rsvps, setRsvps] = useState<Rsvp[]>([]);
+  const [myRsvp, setMyRsvp] = useState<RsvpStatus | null>(null);
 
   const loadMeeting = () => {
     fetch(`/api/meetings/${id}`).then((r) => r.json()).then(setMeeting);
   };
 
-  useEffect(() => { loadMeeting(); }, [id]);
+  const loadRsvps = () => {
+    fetch(`/api/meetings/${id}/rsvp`)
+      .then((r) => r.json())
+      .then((data: Rsvp[]) => {
+        setRsvps(data);
+        const mine = data.find((r) => r.user.id === session?.user?.id);
+        setMyRsvp(mine?.status || null);
+      });
+  };
+
+  useEffect(() => {
+    loadMeeting();
+    loadRsvps();
+  }, [id]);
 
   if (!meeting) return <p>Loading...</p>;
 
@@ -88,6 +111,13 @@ export default function MeetingDetailPage() {
         )}
       </div>
 
+      <RsvpSection
+        meetingId={id}
+        myRsvp={myRsvp}
+        rsvps={rsvps}
+        onRsvpChanged={loadRsvps}
+      />
+
       {meeting.bourbons.length === 0 && (
         <p className="text-muted-foreground">No bourbons assigned to this meeting yet.</p>
       )}
@@ -101,6 +131,159 @@ export default function MeetingDetailPage() {
         />
       ))}
     </div>
+  );
+}
+
+function RsvpSection({
+  meetingId,
+  myRsvp,
+  rsvps,
+  onRsvpChanged,
+}: {
+  meetingId: string;
+  myRsvp: RsvpStatus | null;
+  rsvps: Rsvp[];
+  onRsvpChanged: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const setRsvp = async (status: RsvpStatus) => {
+    setSaving(true);
+    const res = await fetch(`/api/meetings/${meetingId}/rsvp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      toast.success("RSVP updated");
+      onRsvpChanged();
+    } else {
+      toast.error("Failed to update RSVP");
+    }
+    setSaving(false);
+  };
+
+  const goingCount = rsvps.filter((r) => r.status === "GOING").length;
+  const maybeCount = rsvps.filter((r) => r.status === "MAYBE").length;
+  const notGoingCount = rsvps.filter((r) => r.status === "NOT_GOING").length;
+
+  const goingUsers = rsvps.filter((r) => r.status === "GOING");
+  const maybeUsers = rsvps.filter((r) => r.status === "MAYBE");
+  const notGoingUsers = rsvps.filter((r) => r.status === "NOT_GOING");
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>RSVP</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Button
+            variant={myRsvp === "GOING" ? "default" : "outline"}
+            onClick={() => setRsvp("GOING")}
+            disabled={saving}
+            className="flex-1"
+          >
+            <Check className="w-4 h-4 mr-2" />
+            Going
+          </Button>
+          <Button
+            variant={myRsvp === "MAYBE" ? "default" : "outline"}
+            onClick={() => setRsvp("MAYBE")}
+            disabled={saving}
+            className="flex-1"
+          >
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Maybe
+          </Button>
+          <Button
+            variant={myRsvp === "NOT_GOING" ? "default" : "outline"}
+            onClick={() => setRsvp("NOT_GOING")}
+            disabled={saving}
+            className="flex-1"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Can&apos;t Make It
+          </Button>
+        </div>
+
+        <div className="border-t pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4 text-sm">
+              <span className="text-muted-foreground">
+                <span className="font-semibold text-foreground">{goingCount}</span> going
+              </span>
+              <span className="text-muted-foreground">
+                <span className="font-semibold text-foreground">{maybeCount}</span> maybe
+              </span>
+              <span className="text-muted-foreground">
+                <span className="font-semibold text-foreground">{notGoingCount}</span> can&apos;t make it
+              </span>
+            </div>
+            {rsvps.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDetails(!showDetails)}
+              >
+                {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            )}
+          </div>
+
+          {showDetails && rsvps.length > 0 && (
+            <div className="mt-4 space-y-3">
+              {goingUsers.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center">
+                    <Check className="w-4 h-4 mr-1 text-green-600" />
+                    Going ({goingUsers.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {goingUsers.map((r) => (
+                      <Badge key={r.id} variant="secondary">
+                        {r.user.name || r.user.email}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {maybeUsers.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center">
+                    <HelpCircle className="w-4 h-4 mr-1 text-amber-600" />
+                    Maybe ({maybeUsers.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {maybeUsers.map((r) => (
+                      <Badge key={r.id} variant="secondary">
+                        {r.user.name || r.user.email}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {notGoingUsers.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center">
+                    <X className="w-4 h-4 mr-1 text-red-600" />
+                    Can&apos;t Make It ({notGoingUsers.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {notGoingUsers.map((r) => (
+                      <Badge key={r.id} variant="secondary">
+                        {r.user.name || r.user.email}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

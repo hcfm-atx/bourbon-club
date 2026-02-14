@@ -15,6 +15,11 @@ export async function GET() {
     where: { clubId },
     include: {
       bourbons: { include: { bourbon: true } },
+      rsvps: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
     },
     orderBy: { date: "desc" },
   });

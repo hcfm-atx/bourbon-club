@@ -24,7 +24,7 @@ export default function EditBourbonPage() {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [form, setForm] = useState({
-    name: "", distillery: "", proof: "", cost: "", secondaryCost: "",
+    name: "", distillery: "", proof: "", cost: "", secondaryCost: "", price: "",
     type: "BOURBON", region: "", age: "", imageUrl: "",
   });
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -39,6 +39,7 @@ export default function EditBourbonPage() {
         proof: data.proof?.toString() || "",
         cost: data.cost?.toString() || "",
         secondaryCost: data.secondaryCost?.toString() || "",
+        price: data.price?.toString() || "",
         type: data.type || "BOURBON",
         region: data.region || "",
         age: data.age?.toString() || "",
@@ -75,6 +76,7 @@ export default function EditBourbonPage() {
         proof: form.proof ? parseFloat(form.proof) : null,
         cost: form.cost ? parseFloat(form.cost) : null,
         secondaryCost: form.secondaryCost ? parseFloat(form.secondaryCost) : null,
+        price: form.price ? parseFloat(form.price) : null,
         type: form.type,
         region: form.region || null,
         age: form.age ? parseInt(form.age) : null,
@@ -154,6 +156,10 @@ export default function EditBourbonPage() {
                 <Label>Secondary ($)</Label>
                 <Input type="number" step="0.01" value={form.secondaryCost} onChange={(e) => update("secondaryCost", e.target.value)} />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Price ($)</Label>
+              <Input type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="Retail price for Value Score calculation" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

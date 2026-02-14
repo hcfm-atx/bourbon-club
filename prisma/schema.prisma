@@ -57,6 +57,12 @@ enum ExpenseCategory {
   OTHER
 }
 
+enum RsvpStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
 // ─── Auth Models (NextAuth v4 / @auth/prisma-adapter v1) ────────────────────
 
 model Account {
@@ -112,15 +118,18 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  accounts        Account[]
-  sessions        Session[]
-  votes           PollVote[]
-  reviews         Review[]
-  payments        Payment[]
-  expenses        Expense[]
-  createdBourbons Bourbon[]  @relation("CreatedBourbons")
-  memberships ClubMember[]
-  currentClub Club?        @relation("CurrentClub", fields: [currentClubId], references: [id], onDelete: SetNull)
+  accounts           Account[]
+  sessions           Session[]
+  votes              PollVote[]
+  reviews            Review[]
+  payments           Payment[]
+  expenses           Expense[]
+  createdBourbons    Bourbon[]            @relation("CreatedBourbons")
+  memberships        ClubMember[]
+  currentClub        Club?                @relation("CurrentClub", fields: [currentClubId], references: [id], onDelete: SetNull)
+  suggestions        BourbonSuggestion[]
+  suggestionVotes    SuggestionVote[]
+  rsvps              MeetingRsvp[]
 }
 
 model Club {
@@ -140,7 +149,8 @@ model Club {
   duesPeriods DuesPeriod[]
   expenses    Expense[]
   settings    AppSettings?
-  currentUsers User[]   @relation("CurrentClub")
+  currentUsers User[]              @relation("CurrentClub")
+  suggestions  BourbonSuggestion[]
 }
 
 model ClubMember {
@@ -221,6 +231,7 @@ model Meeting {
   club     Club?            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   poll     Poll?            @relation(fields: [pollId], references: [id], onDelete: SetNull)
   bourbons MeetingBourbon[]
+  rsvps    MeetingRsvp[]
 }
 
 model Bourbon {
@@ -232,6 +243,7 @@ model Bourbon {
   proof         Float?
   cost          Float?
   secondaryCost Float?
+  price         Float?
   type          BourbonType @default(BOURBON)
   region        String?
   age           Int?
@@ -341,4 +353,44 @@ model AppSettings {
   updatedAt          DateTime @updatedAt
 
   club Club? @relation(fields: [clubId], references: [id], onDelete: Cascade)
+}
+
+model BourbonSuggestion {
+  id         String   @id @default(cuid())
+  name       String
+  distillery String?
+  notes      String?
+  userId     String
+  clubId     String
+  createdAt  DateTime @default(now())
+
+  user  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club  Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  votes SuggestionVote[]
+}
+
+model SuggestionVote {
+  id           String   @id @default(cuid())
+  suggestionId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  suggestion BourbonSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+}
+
+model MeetingRsvp {
+  id        String     @id @default(cuid())
+  meetingId String
+  userId    String
+  status    RsvpStatus
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
 }

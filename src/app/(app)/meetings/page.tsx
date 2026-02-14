@@ -5,6 +5,16 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Check, HelpCircle, X } from "lucide-react";
+
+type RsvpStatus = "GOING" | "MAYBE" | "NOT_GOING";
+
+interface Rsvp {
+  id: string;
+  status: RsvpStatus;
+  user: { id: string; name: string | null; email: string };
+}
 
 interface Meeting {
   id: string;
@@ -12,6 +22,7 @@ interface Meeting {
   date: string;
   location: string | null;
   bourbons: { bourbon: { name: string } }[];
+  rsvps: Rsvp[];
 }
 
 function getDateKey(dateStr: string) {
@@ -42,7 +53,7 @@ export default function MeetingsPage() {
         <div className="space-y-3">
           <h2 className="text-xl font-semibold">Upcoming</h2>
           {upcoming.map((meeting) => (
-            <MeetingCard key={meeting.id} meeting={meeting} />
+            <MeetingCard key={meeting.id} meeting={meeting} userId={session?.user?.id} />
           ))}
         </div>
       )}
@@ -51,7 +62,7 @@ export default function MeetingsPage() {
         <div className="space-y-3">
           <h2 className="text-xl font-semibold">Past</h2>
           {past.map((meeting) => (
-            <MeetingCard key={meeting.id} meeting={meeting} />
+            <MeetingCard key={meeting.id} meeting={meeting} userId={session?.user?.id} />
           ))}
         </div>
       )}
@@ -151,11 +162,26 @@ function MeetingCalendar({ meetings }: { meetings: Meeting[] }) {
   );
 }
 
-function MeetingCard({ meeting }: { meeting: Meeting }) {
+function MeetingCard({ meeting, userId }: { meeting: Meeting; userId?: string }) {
+  const myRsvp = meeting.rsvps.find((r) => r.user.id === userId);
+  const goingCount = meeting.rsvps.filter((r) => r.status === "GOING").length;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{meeting.title}</CardTitle>
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-lg">{meeting.title}</CardTitle>
+          {myRsvp && (
+            <Badge variant={myRsvp.status === "GOING" ? "default" : "outline"} className="ml-2">
+              {myRsvp.status === "GOING" && <Check className="w-3 h-3 mr-1" />}
+              {myRsvp.status === "MAYBE" && <HelpCircle className="w-3 h-3 mr-1" />}
+              {myRsvp.status === "NOT_GOING" && <X className="w-3 h-3 mr-1" />}
+              {myRsvp.status === "GOING" && "Going"}
+              {myRsvp.status === "MAYBE" && "Maybe"}
+              {myRsvp.status === "NOT_GOING" && "Can't Make It"}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">
@@ -165,6 +191,11 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
         {meeting.bourbons.length > 0 && (
           <p className="text-sm text-muted-foreground mt-1">
             Bourbons: {meeting.bourbons.map((b) => b.bourbon.name).join(", ")}
+          </p>
+        )}
+        {goingCount > 0 && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {goingCount} {goingCount === 1 ? "person" : "people"} going
           </p>
         )}
         <Link href={`/meetings/${meeting.id}`} className="mt-3 inline-block">

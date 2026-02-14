@@ -45,10 +45,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({}, { status: 403 });
   }
 
-  const { name, distillery, proof, cost, type, region, age, imageUrl, purchased } = await req.json();
+  const { name, distillery, proof, cost, price, type, region, age, imageUrl, purchased } = await req.json();
 
   // Only admins can toggle purchased status
-  const data: Record<string, unknown> = { name, distillery, proof, cost, type, region, age, imageUrl };
+  const data: Record<string, unknown> = { name, distillery, proof, cost, price, type, region, age, imageUrl };
   if (purchased !== undefined && isClubAdmin(session)) {
     data.purchased = purchased;
   }

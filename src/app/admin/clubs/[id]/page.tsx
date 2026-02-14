@@ -22,6 +22,7 @@ interface ClubInvite {
   id: string;
   email: string;
   role: "ADMIN" | "MEMBER";
+  createdAt: string;
 }
 
 interface Club {
@@ -135,6 +136,52 @@ export default function AdminClubDetailPage() {
       toast.success(`Role updated to ${newRole}`);
       loadClub();
     }
+  };
+
+  const revokeInvite = async (inviteId: string, email: string) => {
+    const ok = await confirmDialog({
+      title: "Revoke Invitation",
+      description: `Revoke the invitation for ${email}? They will no longer be able to join using this invitation.`,
+      confirmLabel: "Revoke",
+      destructive: true,
+    });
+    if (!ok) return;
+    const res = await fetch(`/api/clubs/${id}/invites/${inviteId}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      toast.success("Invitation revoked");
+      loadClub();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to revoke invitation");
+    }
+  };
+
+  const resendInvite = async (inviteId: string, email: string) => {
+    const res = await fetch(`/api/clubs/${id}/invites/${inviteId}/resend`, {
+      method: "POST",
+    });
+    if (res.ok) {
+      toast.success(`Invitation email resent to ${email}`);
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to resend invitation");
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "today";
+    if (diffDays === 1) return "yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -287,8 +334,28 @@ export default function AdminClubDetailPage() {
             <div className="space-y-2">
               {club.invites.map((invite) => (
                 <div key={invite.id} className="flex items-center justify-between border rounded-md p-3">
-                  <p className="text-sm">{invite.email}</p>
-                  <Badge variant="secondary">{invite.role}</Badge>
+                  <div className="flex-1">
+                    <p className="font-medium">{invite.email}</p>
+                    <p className="text-sm text-muted-foreground">Invited {formatDate(invite.createdAt)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{invite.role}</Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => resendInvite(invite.id, invite.email)}
+                    >
+                      Resend
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => revokeInvite(invite.id, invite.email)}
+                    >
+                      Revoke
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

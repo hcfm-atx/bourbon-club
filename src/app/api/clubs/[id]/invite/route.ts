@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendSMS } from "@/lib/twilio";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -67,6 +68,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const invite = await prisma.clubInvite.create({
       data: { clubId, email, role: role || "MEMBER" },
+    });
+
+    // Send invitation email
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    await sendEmail(
+      email,
+      `You're invited to join ${clubName}`,
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>You've been invited to join ${clubName}</h2>
+          <p>You've been invited to join <strong>${clubName}</strong> as a ${(role || "MEMBER").toLowerCase()}.</p>
+          <p>Click the link below to sign up and join the club:</p>
+          <p>
+            <a href="${baseUrl}/auth/signin" style="display: inline-block; padding: 12px 24px; background-color: #d97706; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              Sign Up & Join
+            </a>
+          </p>
+          <p style="color: #666; font-size: 14px; margin-top: 24px;">
+            Make sure to sign up with this email address: <strong>${email}</strong>
+          </p>
+        </div>
+      `
+    ).catch((err) => {
+      console.error("Failed to send invitation email:", err);
     });
 
     if (phone) {

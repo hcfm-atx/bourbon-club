@@ -40,6 +40,7 @@ interface Bourbon {
   proof: number | null;
   cost: number | null;
   secondaryCost: number | null;
+  price: number | null;
   type: string;
   region: string | null;
   age: number | null;
@@ -246,9 +247,18 @@ export default function BourbonDetailPage() {
             {bourbon.proof && <><span className="text-muted-foreground">Proof</span><span>{bourbon.proof}°</span></>}
             {bourbon.age && <><span className="text-muted-foreground">Age</span><span>{bourbon.age} years</span></>}
             {bourbon.region && <><span className="text-muted-foreground">Region</span><span>{bourbon.region}</span></>}
+            {bourbon.price && <><span className="text-muted-foreground">Price</span><span className="font-semibold">${bourbon.price.toFixed(2)}</span></>}
             {bourbon.cost && <><span className="text-muted-foreground">Cost</span><span>${bourbon.cost.toFixed(2)}</span></>}
             {bourbon.secondaryCost && <><span className="text-muted-foreground">Secondary</span><span>${bourbon.secondaryCost.toFixed(2)}</span></>}
           </div>
+          {bourbon.price && bourbon.price > 0 && bourbon.avgRating !== null && bourbon.reviewCount > 0 && (
+            <div className="mt-3 flex items-center gap-2">
+              <Badge className="bg-green-600 text-white">
+                Value Score: {((bourbon.avgRating / bourbon.price) * 10).toFixed(1)}
+              </Badge>
+              <span className="text-xs text-muted-foreground">(rating per dollar)</span>
+            </div>
+          )}
         </div>
       </div>
 
