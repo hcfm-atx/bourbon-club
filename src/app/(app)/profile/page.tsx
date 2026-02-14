@@ -5,9 +5,25 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+
+interface Club {
+  id: string;
+  name: string;
+  myRole?: string;
+}
+
+interface JoinableClub {
+  id: string;
+  name: string;
+  description: string | null;
+  isPublic: boolean;
+  invited: boolean;
+  _count: { members: number };
+}
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
@@ -22,6 +38,18 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
+  const [myClubs, setMyClubs] = useState<Club[]>([]);
+  const [joinableClubs, setJoinableClubs] = useState<JoinableClub[]>([]);
+  const [switching, setSwitching] = useState<string | null>(null);
+  const [joining, setJoining] = useState<string | null>(null);
+  const [newClubName, setNewClubName] = useState("");
+  const [creatingClub, setCreatingClub] = useState(false);
+
+  const loadClubs = () => {
+    fetch("/api/clubs").then((r) => r.json()).then(setMyClubs);
+    fetch("/api/onboarding/clubs").then((r) => r.json()).then(setJoinableClubs);
+  };
+
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
@@ -31,6 +59,7 @@ export default function ProfilePage() {
         setSmsOptIn(data.smsOptIn || false);
         setHasPassword(data.hasPassword || false);
       });
+    loadClubs();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,6 +111,59 @@ export default function ProfilePage() {
     setSavingPassword(false);
   };
 
+  const switchClub = async (clubId: string) => {
+    setSwitching(clubId);
+    await fetch("/api/clubs/switch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clubId }),
+    });
+    await update();
+    setSwitching(null);
+    window.location.reload();
+  };
+
+  const joinClub = async (clubId: string) => {
+    setJoining(clubId);
+    const res = await fetch("/api/onboarding/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ joinClubIds: [clubId] }),
+    });
+    if (res.ok) {
+      toast.success("Joined club!");
+      await update();
+      loadClubs();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to join club");
+    }
+    setJoining(null);
+  };
+
+  const createClub = async () => {
+    if (!newClubName.trim()) return;
+    setCreatingClub(true);
+    const res = await fetch("/api/onboarding/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ joinClubIds: [], newClub: { name: newClubName.trim() } }),
+    });
+    if (res.ok) {
+      toast.success("Club created!");
+      setNewClubName("");
+      await update();
+      loadClubs();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Failed to create club");
+    }
+    setCreatingClub(false);
+  };
+
+  const myClubIds = new Set(myClubs.map((c) => c.id));
+  const availableClubs = joinableClubs.filter((c) => !myClubIds.has(c.id));
+
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
@@ -125,6 +207,108 @@ export default function ProfilePage() {
               {saving ? "Saving..." : "Save Changes"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Your Clubs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {myClubs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">You&apos;re not a member of any clubs yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {myClubs.map((club) => {
+                const isActive = club.id === session?.user?.currentClubId;
+                return (
+                  <div
+                    key={club.id}
+                    className={`flex items-center justify-between border rounded-md p-3 ${
+                      isActive ? "border-primary bg-accent" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{club.name}</span>
+                      {club.myRole && (
+                        <Badge variant={club.myRole === "ADMIN" ? "default" : "secondary"}>
+                          {club.myRole}
+                        </Badge>
+                      )}
+                      {isActive && (
+                        <Badge variant="outline">Active</Badge>
+                      )}
+                    </div>
+                    {!isActive && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={switching === club.id}
+                        onClick={() => switchClub(club.id)}
+                      >
+                        {switching === club.id ? "Switching..." : "Switch"}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {availableClubs.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Join a Club</CardTitle>
+            <CardDescription>Public clubs and clubs you&apos;ve been invited to.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {availableClubs.map((club) => (
+                <div key={club.id} className="flex items-center justify-between border rounded-md p-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{club.name}</span>
+                      {club.invited && <Badge variant="secondary">Invited</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {club._count.members} {club._count.members === 1 ? "member" : "members"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={joining === club.id}
+                    onClick={() => joinClub(club.id)}
+                  >
+                    {joining === club.id ? "Joining..." : "Join"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Create a Club</CardTitle>
+          <CardDescription>Start a new club and invite your friends.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Club name"
+              value={newClubName}
+              onChange={(e) => setNewClubName(e.target.value)}
+            />
+            <Button
+              disabled={!newClubName.trim() || creatingClub}
+              onClick={createClub}
+            >
+              {creatingClub ? "Creating..." : "Create"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
