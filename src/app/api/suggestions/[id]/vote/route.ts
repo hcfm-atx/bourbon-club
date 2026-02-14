@@ -5,12 +5,12 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const suggestionId = params.id;
+  const { id: suggestionId } = await params;
 
   const existing = await prisma.suggestionVote.findUnique({
     where: {
