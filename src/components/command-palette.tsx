@@ -57,7 +57,7 @@ export function CommandPalette() {
     if (session?.user?.id && open) {
       fetch("/api/bourbons")
         .then((r) => r.json())
-        .then((data) => setBourbons(data))
+        .then((data) => setBourbons(data.bourbons || data))
         .catch(() => setBourbons([]));
     }
   }, [session?.user?.id, open]);

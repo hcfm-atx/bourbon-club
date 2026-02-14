@@ -25,7 +25,7 @@ export default function AdminBourbonsPage() {
   const { confirm: confirmDialog, dialogProps } = useConfirmDialog();
 
   useEffect(() => {
-    fetch("/api/bourbons").then((r) => r.json()).then(setBourbons);
+    fetch("/api/bourbons").then((r) => r.json()).then((data) => setBourbons(data.bourbons || data));
   }, []);
 
   const deleteBourbon = async (id: string) => {

@@ -52,7 +52,7 @@ export default function BourbonComparePage() {
     fetch("/api/bourbons")
       .then((r) => r.json())
       .then((data) => {
-        setAllBourbons(data);
+        setAllBourbons(data.bourbons || data);
       })
       .finally(() => setLoading(false));
   }, []);

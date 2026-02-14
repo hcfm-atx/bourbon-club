@@ -30,7 +30,7 @@ export default function NewPollPage() {
     if (pollType === "BOURBON") {
       fetch("/api/bourbons?purchased=true")
         .then((r) => r.json())
-        .then(setPurchasedBourbons);
+        .then((data) => setPurchasedBourbons(data.bourbons || data));
     }
   }, [pollType]);
 
