@@ -29,13 +29,13 @@ export default async function Home() {
         <h1 className="text-6xl sm:text-7xl font-light tracking-tight leading-none">
           Bourbon Club
         </h1>
-        <div className="w-16 h-px bg-foreground/20 my-8" />
+        <div className="w-16 h-px bg-primary/30 my-8" />
         <p className="text-xl text-muted-foreground font-light leading-relaxed max-w-lg">
           A place to organize tastings, share reviews, and discover great whiskey together.
         </p>
         <Link
           href="/login"
-          className="mt-12 inline-flex items-center justify-center border border-foreground bg-foreground text-background px-10 py-4 text-sm tracking-widest uppercase hover:bg-transparent hover:text-foreground transition-all duration-300"
+          className="mt-12 inline-flex items-center justify-center border border-primary bg-primary text-primary-foreground px-10 py-4 text-sm tracking-widest uppercase hover:bg-transparent hover:text-primary transition-all duration-300"
         >
           Get Started
         </Link>
@@ -50,28 +50,28 @@ export default async function Home() {
       <div className="max-w-3xl mx-auto px-6 py-24">
         <div className="grid gap-16 sm:grid-cols-2">
           <div>
-            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-3">01</p>
+            <p className="text-sm tracking-widest uppercase text-primary/70 mb-3">01</p>
             <h3 className="text-2xl font-light mb-3">Tastings</h3>
             <p className="text-muted-foreground leading-relaxed">
               Schedule meetings, curate bourbon lineups, and keep a history of every tasting your club has held.
             </p>
           </div>
           <div>
-            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-3">02</p>
+            <p className="text-sm tracking-widest uppercase text-primary/70 mb-3">02</p>
             <h3 className="text-2xl font-light mb-3">Reviews</h3>
             <p className="text-muted-foreground leading-relaxed">
               Rate bourbons across appearance, nose, taste, mouthfeel, and finish with detailed scoring and tasting notes.
             </p>
           </div>
           <div>
-            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-3">03</p>
+            <p className="text-sm tracking-widest uppercase text-primary/70 mb-3">03</p>
             <h3 className="text-2xl font-light mb-3">Polls</h3>
             <p className="text-muted-foreground leading-relaxed">
               Vote on meeting dates and bourbon preferences so everyone has a say in what comes next.
             </p>
           </div>
           <div>
-            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-3">04</p>
+            <p className="text-sm tracking-widest uppercase text-primary/70 mb-3">04</p>
             <h3 className="text-2xl font-light mb-3">Treasury</h3>
             <p className="text-muted-foreground leading-relaxed">
               Track dues, expenses, and payments to keep your club&apos;s finances transparent and organized.
