@@ -81,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           <p>You've been invited to join <strong>${clubName}</strong> as a ${(role || "MEMBER").toLowerCase()}.</p>
           <p>Click the link below to sign up and join the club:</p>
           <p>
-            <a href="${baseUrl}/auth/signin" style="display: inline-block; padding: 12px 24px; background-color: #d97706; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            <a href="${baseUrl}/login" style="display: inline-block; padding: 12px 24px; background-color: #d97706; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
               Sign Up & Join
             </a>
           </p>
